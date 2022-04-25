@@ -201,11 +201,15 @@ public class PipeGridManager : PersistedData<PipeGridManager>
             // Check if we can connect to side
             if (!connection.CanConnect(side)) continue;
             // Try to fetch the node at the given side
-            if (TryGetNode(connection.WorldPos + FullRotation.Vector[side], out neighbour))
-            { 
+            var offset = FullRotation.Vector[side];
+            if (TryGetNode(connection.WorldPos + offset, out neighbour))
+            {
+                // Check if other one can connect to use
+                int mirrored = FullRotation.Mirror(side);
+                if (!neighbour.CanConnect(mirrored)) continue;
+                // Update the node connectors
                 connection[side] = neighbour;
-                var opp = FullRotation.Mirror(side);
-                neighbour[opp] = connection;
+                neighbour[mirrored] = connection;
             }
         }
 
@@ -394,14 +398,14 @@ public class PipeGridManager : PersistedData<PipeGridManager>
                 // Condition may look weird, but we allow to place blocks
                 // next to each other if they don't share any exit. If only
                 // one exit aligns with the new block, we don't allow it.
-                if (neighbour.CanConnect(FullRotation.Mirror(side))
-                    == block.CanConnect(side, bv.rotation))
-                {
-                    neighbours.Add(neighbour);
-                }
+                bool a = block.CanConnect(side, bv.rotation);
+                int mirror = FullRotation.Mirror(side);
+                bool b = neighbour.CanConnect(mirror);
+                if (b == a) neighbours.Add(neighbour);
+                else if (b || a) return false;
             }
         }
-        // Somehow it all has to start
+        // Somehow it all has to start with one
         if (hasOneAround == false) return true;
         // Log.Out("Has Neighbours {0}", neighbours.Count);
         // OK if no grid to connect yet (first block)

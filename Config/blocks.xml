@@ -282,4 +282,10 @@
 		<property name="PipeConnectors" value="forward,right" />
 	</append>
 
+	<append xpath="/blocks/block[@name='metalPipeJoint']">
+		<property name="Class" value="PipeConnection, AutoHarvest" />
+		<property name="DisplayInfo" value="Custom" />
+		<property name="PipeConnectors" value="forward,left,back" />
+	</append>
+
 </configs>

@@ -13,19 +13,21 @@ public class PipeGridConnection : PipeGridNode
     public int PowerIndex = int.MaxValue;
     public int DistanceToSource = int.MaxValue;
 
-    public PipeGridConnection[] Neighbours = new PipeGridConnection[6];
+    // Use public API below to keep Count in sync
+    private PipeGridConnection[] Neighbours
+        = new PipeGridConnection[6];
 
-    public PipeGridConnection Up { get => Neighbours[0]; set => Neighbours[0] = value; }
-    public PipeGridConnection Left { get => Neighbours[1]; set => Neighbours[1] = value; }
-    public PipeGridConnection Forward { get => Neighbours[2]; set => Neighbours[2] = value; }
-    public PipeGridConnection Down { get => Neighbours[3]; set => Neighbours[3] = value; }
-    public PipeGridConnection Right { get => Neighbours[4]; set => Neighbours[4] = value; }
-    public PipeGridConnection Back { get => Neighbours[5]; set => Neighbours[5] = value; }
+    // Amount of valid neighbours
+    public int Count { get; private set; }
 
     public PipeGridConnection this[int index]
     {
         get => Neighbours[index];
-        set => Neighbours[index] = value;
+        set {
+            if (Neighbours[index] == null && value != null) Count++;
+            else if (Neighbours[index] != null && value == null) Count--;
+            Neighbours[index] = value;
+        }
     }
 
     public PipeGridConnection(Vector3i position, BlockValue block)
@@ -47,19 +49,20 @@ public class PipeGridConnection : PipeGridNode
 
     public void InitFromManager(PipeGridManager manager)
     {
-        PipeGridConnection neighbour;
-        // Assuming we have only one grid around for now
-        if (manager.TryGetNode(WorldPos + Vector3i.up, out neighbour)) Up = neighbour;
-        if (manager.TryGetNode(WorldPos + Vector3i.left, out neighbour)) Left = neighbour;
-        if (manager.TryGetNode(WorldPos + Vector3i.forward, out neighbour)) Forward = neighbour;
-        if (manager.TryGetNode(WorldPos + Vector3i.right, out neighbour)) Right = neighbour;
-        if (manager.TryGetNode(WorldPos + Vector3i.back, out neighbour)) Back = neighbour;
-        if (manager.TryGetNode(WorldPos + Vector3i.down, out neighbour)) Down = neighbour;
+        for (int side = 0; side < 6; side++)
+        {
+            if (manager.TryGetNode(
+                WorldPos + FullRotation.Vector[side],
+                out PipeGridConnection neighbour))
+            {
+                Neighbours[side] = neighbour;
+            }
+        }
     }
 
     public bool IsEndPoint()
     {
-        return GetNeighbourCount() <= 1;
+        return Count <= 1;
     }
 
     public int GetNeighbourCount()

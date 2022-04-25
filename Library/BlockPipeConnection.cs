@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using XMLData.Parsers;
 
-public class BlockPipeConnection : Block
+public class BlockPipeConnection : Block, IBlockPipeNode
 {
-
-	List<int> Connectors = new List<int>();
 
 	byte ConnectMask = 63;
 
-    public override void Init()
+	public int MaxConnections => 6;
+	
+	public override void Init()
     {
         base.Init();
 		// Parse potential pipe connectors
@@ -24,9 +24,6 @@ public class BlockPipeConnection : Block
             }
 		}
 	}
-
-	// public virtual bool IsSource() => false;
-
 
     public override string GetCustomDescription(
 		Vector3i _blockPos,

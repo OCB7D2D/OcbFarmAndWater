@@ -10,8 +10,8 @@ public abstract class PipeGridNode
     public Vector3i WorldPos { get; private set; }
 
     // ToDo: Introduce BlockPipeNode as abstract base
-    public BlockPipeConnection Block => global::Block
-        .list[BlockID] as BlockPipeConnection;
+    public IBlockPipeNode Block => global::Block
+        .list[BlockID] as IBlockPipeNode;
 
     public PipeGridNode(Vector3i position, BlockValue block)
     {

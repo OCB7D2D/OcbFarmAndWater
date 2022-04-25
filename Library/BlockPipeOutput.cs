@@ -5,8 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-class BlockPipeOutput : BlockPowered
+class BlockPipeOutput : BlockPowered, IBlockPipeNode
 {
+	public int MaxConnections => 1;
+
+	public bool CanConnect(int side, int rotation) => true;
 
 	public override void OnBlockAdded(
 		WorldBase _world,
@@ -14,7 +17,6 @@ class BlockPipeOutput : BlockPowered
 		Vector3i _blockPos,
 		BlockValue _blockValue)
 	{
-		Log.Out("Block Out added");
 		base.OnBlockAdded(_world, _chunk, _blockPos, _blockValue);
 		if (_blockValue.ischild) return;
 		var output = new PipeGridOutput(_blockPos, _blockValue);
@@ -30,6 +32,18 @@ class BlockPipeOutput : BlockPowered
 		base.OnBlockRemoved(_world, _chunk, _blockPos, _blockValue);
 		if (_blockValue.ischild) return;
 		PipeGridManager.Instance.RemoveOutput(_blockPos);
+	}
+
+	public override bool CanPlaceBlockAt(
+		WorldBase _world,
+		int _clrIdx,
+		Vector3i _blockPos,
+		BlockValue _blockValue,
+		// Ignore existing blocks?
+		bool _bOmitCollideCheck = false)
+	{
+		return base.CanPlaceBlockAt(_world, _clrIdx, _blockPos, _blockValue, _bOmitCollideCheck)
+			&& PipeGridManager.Instance.CanConnect(this, _blockPos, _blockValue);
 	}
 
 	public override void DoExchangeAction(

@@ -1,5 +1,9 @@
-﻿class BlockPipeWell : Block
+﻿class BlockPipeWell : Block, IBlockPipeNode
 {
+
+	public int MaxConnections => 0;
+
+	public bool CanConnect(int side, int rotation) => false;
 
 	public override void OnBlockAdded(
 		WorldBase _world,
@@ -7,7 +11,6 @@
 		Vector3i _blockPos,
 		BlockValue _blockValue)
 	{
-		Log.Out("Block Out added");
 		base.OnBlockAdded(_world, _chunk, _blockPos, _blockValue);
 		if (_blockValue.ischild) return;
 		var well = new PipeGridWell(_blockPos, _blockValue);

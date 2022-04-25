@@ -5,8 +5,8 @@ using System.IO;
 public class PipeGridPump : PipeGridPowered
 {
 
-    PipeGridConnection Start;
-    HashSet<PipeGridConnection> End;
+    // PipeGridConnection Start;
+    // HashSet<PipeGridConnection> End;
 
     public PipeGridPump(Vector3i position, BlockValue block)
         : base(position, block)

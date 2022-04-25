@@ -135,7 +135,8 @@
 
 			<property name="WaterPipeSource" value="true"/>
 			<property name="DisplayInfo" value="Custom" />
-
+			<property name="WaterBlockRange" value="1,1,1" />
+			<property name="MinWaterBlocks" value="9" />
 		</block>
 
 		<block name="ocbWaterPipeOutput">

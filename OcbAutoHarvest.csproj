@@ -73,6 +73,7 @@
     <Compile Include="Harmony\OcbAutoHarvest.cs" />
     <Compile Include="Harmony\AssemblyInfo.cs" />
     <Compile Include="Library\AutoHarvestCmd.cs" />
+    <Compile Include="Library\IBlockPipeNode.cs" />
     <Compile Include="Library\PipeGridManagerCmd.cs" />
     <Compile Include="Library\BlockAutoHarvest.cs" />
     <Compile Include="Library\BlockPipeConnection.cs" />

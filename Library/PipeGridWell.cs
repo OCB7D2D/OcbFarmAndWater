@@ -31,7 +31,6 @@ public class PipeGridWell : PipeGridNode
         WaterAvailable = br.ReadSingle();
         MaxWaterLevel = br.ReadUInt32();
         SunLight = br.ReadByte();
-        Log.Out("+++ LOADED {0}", WorldPos);
     }
 
     public override void Write(BinaryWriter bw)
@@ -63,7 +62,6 @@ public class PipeGridWell : PipeGridNode
             Vector3 position = transform.localPosition;
             position.y = 0.33f / MaxWaterLevel * WaterAvailable - 0.49f;
             transform.localPosition = position;
-            Log.Out("Found Transform for WaterLevel {0}", position.y);
         }
     }
 

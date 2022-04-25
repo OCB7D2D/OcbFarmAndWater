@@ -4,17 +4,33 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-class BlockPipeSource : BlockPowered
+class BlockPipeSource : BlockPowered, IBlockPipeNode
 {
 
-	// public override bool IsSource() => true;
+	public int MaxConnections => 1;
+
+	private int MinWaterBlocks = 9;
+
+	private Vector3i WaterBlockRange = Vector3i.one;
+
+	public bool CanConnect(int side, int rotation) => true;
+
+	public override void Init()
+	{
+		base.Init();
+		// Parse optional block XML setting properties
+		if (Properties.Contains("MinWaterBlocks")) MinWaterBlocks =
+				int.Parse(Properties.GetString("MinWaterBlocks"));
+		if (Properties.Contains("WaterBlockRange")) WaterBlockRange =
+				Vector3i.Parse(Properties.GetString("WaterBlockRange"));
+	}
+
 	public override void OnBlockAdded(
 		WorldBase _world,
 		Chunk _chunk,
 		Vector3i _blockPos,
 		BlockValue _blockValue)
 	{
-		Log.Out("Block added");
 		base.OnBlockAdded(_world, _chunk, _blockPos, _blockValue);
 		if (_blockValue.ischild) return;
 		var source = new PipeGridSource(_blockPos, _blockValue);
@@ -32,25 +48,30 @@ class BlockPipeSource : BlockPowered
 		PipeGridManager.Instance.RemoveSource(_blockPos);
 	}
 
+	// Static structure to be re-used on each call
+	// Make sure call is not recursively ever (beware)!
+	private static Vector3i _pos = new Vector3i();
+
 	private bool HasEnoughWaterAround(
 		WorldBase _world,
-		int _clrIdx,
-		Vector3i _blockPos,
-		int limit = 9)
-    {
+		Vector3i _blockPos)
+	{
 		int found = 0;
-		Vector3i position = new Vector3i();
-		for (position.x = _blockPos.x - 1; position.x <= _blockPos.x + 1; position.x++)
+		// Use pretty explicit for loops instead of doing an addition with each iteration
+		// This avoids an unnecessary vector3i allocation; going easy on the garbage collector
+		for (_pos.x = _blockPos.x - WaterBlockRange.x; _pos.x <= _blockPos.x + WaterBlockRange.x; _pos.x++)
 		{
-			for (position.y = _blockPos.y - 1; position.y <= _blockPos.y + 1; position.y++)
+			for (_pos.y = _blockPos.y - WaterBlockRange.y; _pos.y <= _blockPos.y + WaterBlockRange.y; _pos.y++)
 			{
-				for (position.z = _blockPos.z - 1; position.z <= _blockPos.z + 1; position.z++)
+				for (_pos.z = _blockPos.z - WaterBlockRange.z; _pos.z <= _blockPos.z + WaterBlockRange.z; _pos.z++)
 				{
-					found += _world.GetBlock(_clrIdx, position).isWater ? 1 : 0;
-					if (found >= limit) return true;
+					found += _world.IsWater(_pos) ? 1 : 0;
+					if (found >= MinWaterBlocks) return true;
 				}
 			}
 		}
+		// ToDo: how should we cache this information?
+		// ToDo: must be periodically checked (when loaded)
 		return false;
     }
 
@@ -63,7 +84,8 @@ class BlockPipeSource : BlockPowered
 		bool _bOmitCollideCheck = false)
 	{
 		return base.CanPlaceBlockAt(_world, _clrIdx, _blockPos, _blockValue, _bOmitCollideCheck)
-			&& HasEnoughWaterAround(_world, _clrIdx, _blockPos);
+			&& PipeGridManager.Instance.CanConnect(this, _blockPos, _blockValue)
+			&& HasEnoughWaterAround(_world, _blockPos);
 	}
 
 

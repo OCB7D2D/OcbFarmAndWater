@@ -214,26 +214,25 @@ public class PipeGridManager : PersistedData<PipeGridManager>
         }
 
         int count = 0; int source = -1; int first = -1;
-        PipeGridConnection[] neighbours = connection.Neighbours;
 
-        for (int i = 0; i < neighbours.Length; i++)
+        for (int side = 0; side < 6; side++)
         {
-            if (neighbours[i] == null) continue;
-            if (neighbours[i].Grid == null)
+            if (connection[side] == null) continue;
+            if (connection[side].Grid == null)
             {
                 Log.Error("Neighbour without grid found");
             }
-            else if (neighbours[i].Grid.HasSource)
+            else if (connection[side].Grid.HasSource)
             {
                 if (source != -1)
                 {
                     Log.Error("Too many sources, can't join!!");
                 }
-                source = i;
+                source = side;
             }
             else if (first == -1)
             {
-                first = i;
+                first = side;
             }
             count++;
         }
@@ -254,16 +253,12 @@ public class PipeGridManager : PersistedData<PipeGridManager>
         else
         {
             Connections[connection.WorldPos] = connection;
-            connection.PropagateGridChange(neighbours[source]);
+            connection.PropagateGridChange(connection[source]);
             Console.WriteLine("Propagate finished");
         }
 
     }
 
-
-    // Reuse list 
-    static List<PipeGridConnection> _neighbours
-        = new List<PipeGridConnection>();
 
     public void RemoveConnection(Vector3i position)
     {
@@ -272,29 +267,37 @@ public class PipeGridManager : PersistedData<PipeGridManager>
         {
             if (connection.Grid != null)
             {
+                bool hasNothingYet = true;
                 // First remove from  the existing grid
                 // Simply counts and disposes empty grids
                 connection.Grid.RemoveConnection(connection);
-                // Get valid neighbours as a list
-                connection.GetNeighbours(ref _neighbours);
-                // Re-check grid if it was cyclic before
-                if (_neighbours[0].Grid.IsCyclic)
+                for (int side = 0; side < 6; side++)
                 {
-                    // Reset cyclic flag and recheck
-                    _neighbours[0].Grid.IsCyclic = false;
-                    // Propagate that change into neighbour tree
-                    _neighbours[0].PropagateGridChange(connection);
+                    var neighbour = connection[side];
+                    if (neighbour == null) continue;
+                    if (hasNothingYet == true)
+                    {
+                        // Re-check grid if it was cyclic before
+                        if (neighbour.Grid != null && neighbour.Grid.IsCyclic)
+                        {
+                            // Reset cyclic flag and recheck
+                            neighbour.Grid.IsCyclic = false;
+                            // Propagate that change into neighbour tree
+                            neighbour.PropagateGridChange(connection);
+                        }
+                        // Switch branch flag
+                        hasNothingYet = false;
+                    }
+                    else
+                    {
+                        // Assign new grid to current connection
+                        connection.Grid = new PipeGrid();
+                        // Propagate that change into neighbour tree
+                        neighbour.PropagateGridChange(connection);
+                    }
+                    // Reset neighbour on the other side of the link
+                    neighbour[FullRotation.Mirror(side)] = null;
                 }
-                // Check if we should split the grid(s) again
-                for (int i = 1; i < _neighbours.Count; i++)
-                {
-                    // Assign new grid to current connection
-                    connection.Grid = new PipeGrid();
-                    // Propagate that change into neighbour tree
-                    _neighbours[i].PropagateGridChange(connection);
-                }
-                // Clear re-used list
-                _neighbours.Clear();
             }
             else
             {
@@ -381,12 +384,18 @@ public class PipeGridManager : PersistedData<PipeGridManager>
         return true;
     }
 
-    public bool CanConnect(BlockPipeConnection block, Vector3i position, BlockValue bv)
+    // Reuse static structures on call
+    // Make sure to not call me recursively
+    static int neighbours = 0;
+    static PipeGridConnection[] NB
+        = new PipeGridConnection[6];
+
+    public bool CanConnect(IBlockPipeNode block, Vector3i position, BlockValue bv)
     {
+        neighbours = 0;
         bool hasOneAround = false;
         PipeGridConnection neighbour;
-        List<PipeGridConnection> neighbours = new List<PipeGridConnection>();
-
+        // Check for a neighbour on every side
         for (int side = 0; side < 6; side++)
         {
             // Check we can connect at side
@@ -401,44 +410,49 @@ public class PipeGridManager : PersistedData<PipeGridManager>
                 bool a = block.CanConnect(side, bv.rotation);
                 int mirror = FullRotation.Mirror(side);
                 bool b = neighbour.CanConnect(mirror);
-                if (b == a) neighbours.Add(neighbour);
-                else if (b || a) return false;
+                // Allow if both have connectors facing each other
+                // Or if both have no connector facing the other
+                if (a == b) NB[neighbours++] = neighbour;
+                // Disallow if only one has a connector
+                else if (a || b) return false;
+                // Check if we would exhaust allowed connections
+                if (a && neighbour.Count >= neighbour
+                    .Block.MaxConnections) return false;
             }
         }
+        // Check if we would exhaust our allowed connections
+        if (neighbours >= block.MaxConnections) return false;
         // Somehow it all has to start with one
         if (hasOneAround == false) return true;
         // Log.Out("Has Neighbours {0}", neighbours.Count);
         // OK if no grid to connect yet (first block)
-        if (neighbours.Count == 0) return false;
+        if (neighbours == 0) return false;
         // Check length requirement for single grid
-        if (neighbours.Count == 1)
+        if (neighbours == 1)
         {
-            int count = neighbours[0].CountLongestDistance();
+            int count = NB[0].CountLongestDistance();
             // Console.WriteLine("Count {0}", count);
             return count < MaxDistance;
         }
         // OK if no or only one grid has source
         int sources = 0;
-        for (int i = 0; i < neighbours.Count; i++)
+        for (int i = 0; i < neighbours; i++)
         {
-            if (neighbours[i].Grid == null) continue;
-            if (neighbours[i].Grid.HasSource) ++sources;
+            if (NB[i].Grid == null) continue;
+            if (NB[i].Grid.HasSource) ++sources;
         }
         if (sources > 1) return false;
         // Get longest and second longest
-        if (neighbours.Count > 1)
+        if (neighbours > 1)
         {
-            int longest = 0; int second = 0;
-            for (int i = 0; i < neighbours.Count; i++)
+            int longest = 0, second = 0;
+            for (int nb = 0; nb < neighbours; nb++)
             {
-                int count = neighbours[i].CountLongestDistance();
-                if (count >= longest)
-                {
-                    second = longest;
-                    longest = count;
-                }
+                int count = NB[nb].CountLongestDistance();
+                if (count < longest) continue;
+                second = longest;
+                longest = count;
             }
-            // Console.WriteLine("Count {0} {1}", longest, second);
             return longest + second < MaxDistance;
         }
         // Nothing to complain
@@ -449,7 +463,6 @@ public class PipeGridManager : PersistedData<PipeGridManager>
     {
         bw.Write(FileVersion);
         bw.Write(Connections.Count);
-        Console.WriteLine("Writing the whole thing out");
         foreach (var kv in Connections)
         {
             // Make sure to write out the header first

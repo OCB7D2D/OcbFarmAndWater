@@ -1,9 +1,29 @@
-﻿class BlockPipeConnection : Block
+﻿using System.Collections.Generic;
+using XMLData.Parsers;
+
+public class BlockPipeConnection : Block
 {
+
+	List<int> Connectors = new List<int>();
+
+	byte ConnectMask = 63;
+
     public override void Init()
     {
         base.Init();
-    }
+		// Parse potential pipe connectors
+		if (Properties.Contains("PipeConnectors"))
+        {
+			ConnectMask = 0; // Reset the mask first
+			string[] connectors = Properties.GetString("PipeConnectors").ToLower()
+				.Split(new[] { ',', ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+			foreach (string connector in connectors)
+            {
+				ConnectMask |= (byte)(1 << (byte)EnumParser
+					.Parse<FullRotation.Side>(connector));
+            }
+		}
+	}
 
 	// public virtual bool IsSource() => false;
 
@@ -29,8 +49,15 @@
 		bool _bOmitCollideCheck = false)
 	{
 		return base.CanPlaceBlockAt(_world, _clrIdx, _blockPos, _blockValue, _bOmitCollideCheck)
-			&& PipeGridManager.Instance.CanConnect(_blockPos);
+			&& PipeGridManager.Instance.CanConnect(this, _blockPos, _blockValue);
 	}
+
+
+	public bool CanConnect(int side, int rotation = 0)
+    {
+		side = FullRotation.InvSide(side, rotation);
+		return (ConnectMask & (byte)(1 << (byte)side)) != 0;
+    }
 
 	public override void OnBlockAdded(
 		WorldBase _world,
@@ -38,7 +65,6 @@
 		Vector3i _blockPos,
 		BlockValue _blockValue)
 	{
-		Log.Out("Block added");
 		base.OnBlockAdded(_world, _chunk, _blockPos, _blockValue);
 		if (_blockValue.ischild) return;
 		var connection = new PipeGridConnection(_blockPos, _blockValue);

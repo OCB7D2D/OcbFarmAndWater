@@ -18,7 +18,7 @@ public class PipeGrid
     public List<PipeGridSprinkler> Sprinklers = new List<PipeGridSprinkler>();
 
     public bool HasSource => Source != null;
-    public Vector3i FirstPosition = Vector3i.min;
+    public Vector3i FirstPosition = Vector3i.invalid;
 
     int Count = 0;
 
@@ -57,9 +57,9 @@ public class PipeGrid
         Count--;
         if (Count == 0)
         {
-            Console.WriteLine("Removing grid now");
+            //Console.WriteLine("Removing grid now");
             PipeGridManager.Instance.RemoveGrid(this);
-            FirstPosition = Vector3i.min;
+            FirstPosition = Vector3i.invalid;
         }
         // Connections.Remove(connection);
     }
@@ -131,8 +131,19 @@ public class PipeGrid
     public override string ToString()
     {
         return string.Format(
-            "PipeGrid {0} has {1} pipes and {2} pumps\nSource: {3} at {4})",
-            ID, Count, Pumps.Count, Source, FirstPosition);
+            "PipeGrid {0} has {1} pipes and {2} pumps\nSource: {3} at {4})\nCyclic: {5}",
+            ID, Count, Pumps.Count, Source, FirstPosition, IsCyclic);
+    }
+
+    // This may be done more efficient, but it
+    // is an edge-case and will be optimized last
+    public void ResetGridState()
+    {
+        foreach (var con in PipeGridManager.Instance.Connections)
+        {
+            // Only work on connection from our grid
+            if (con.Value.Grid != this) continue;
+        }
     }
 
 }

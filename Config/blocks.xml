@@ -270,4 +270,16 @@
 		<property name="DisplayInfo" value="Custom" />
 	</append>
 
+	<append xpath="/blocks/block[@name='metalPipeStraight']">
+		<property name="Class" value="PipeConnection, AutoHarvest" />
+		<property name="DisplayInfo" value="Custom" />
+		<property name="PipeConnectors" value="forward,back" />
+	</append>
+
+	<append xpath="/blocks/block[@name='metalPipeCorner']">
+		<property name="Class" value="PipeConnection, AutoHarvest" />
+		<property name="DisplayInfo" value="Custom" />
+		<property name="PipeConnectors" value="forward,right" />
+	</append>
+
 </configs>

@@ -196,18 +196,18 @@ public class PipeGridManager : PersistedData<PipeGridManager>
         PipeGridConnection neighbour;
 
         // Collect neighbours from existing blocks/connections
-        if (TryGetNode(connection.WorldPos + Vector3i.up, out neighbour))
-        { connection.Up = neighbour; neighbour.Down = connection; }
-        if (TryGetNode(connection.WorldPos + Vector3i.left, out neighbour))
-        { connection.Left = neighbour; neighbour.Right = connection; }
-        if (TryGetNode(connection.WorldPos + Vector3i.forward, out neighbour))
-        { connection.Forward = neighbour; neighbour.Back = connection; }
-        if (TryGetNode(connection.WorldPos + Vector3i.right, out neighbour))
-        { connection.Right = neighbour; neighbour.Left = connection; }
-        if (TryGetNode(connection.WorldPos + Vector3i.back, out neighbour))
-        { connection.Back = neighbour; neighbour.Forward = connection; }
-        if (TryGetNode(connection.WorldPos + Vector3i.down, out neighbour))
-        { connection.Down = neighbour; neighbour.Up = connection; }
+        for (int side = 0; side < 6; side++)
+        {
+            // Check if we can connect to side
+            if (!connection.CanConnect(side)) continue;
+            // Try to fetch the node at the given side
+            if (TryGetNode(connection.WorldPos + FullRotation.Vector[side], out neighbour))
+            { 
+                connection[side] = neighbour;
+                var opp = FullRotation.Mirror(side);
+                neighbour[opp] = connection;
+            }
+        }
 
         int count = 0; int source = -1; int first = -1;
         PipeGridConnection[] neighbours = connection.Neighbours;
@@ -273,6 +273,14 @@ public class PipeGridManager : PersistedData<PipeGridManager>
                 connection.Grid.RemoveConnection(connection);
                 // Get valid neighbours as a list
                 connection.GetNeighbours(ref _neighbours);
+                // Re-check grid if it was cyclic before
+                if (_neighbours[0].Grid.IsCyclic)
+                {
+                    // Reset cyclic flag and recheck
+                    _neighbours[0].Grid.IsCyclic = false;
+                    // Propagate that change into neighbour tree
+                    _neighbours[0].PropagateGridChange(connection);
+                }
                 // Check if we should split the grid(s) again
                 for (int i = 1; i < _neighbours.Count; i++)
                 {
@@ -359,29 +367,45 @@ public class PipeGridManager : PersistedData<PipeGridManager>
     public bool RemoveGrid(PipeGrid grid)
     {
         var idx = Grids.IndexOf(grid);
-        Console.WriteLine("Removing at {0}", idx);
+        //Console.WriteLine("Removing at {0}", idx);
         if (idx == -1) return false;
         Grids.RemoveAt(idx);
         while (idx < Grids.Count) 
             Grids[idx++].ID--;
-        foreach (var i in Grids)
-            Console.WriteLine("Grid {0}", i);
+        //foreach (var i in Grids)
+        //    Console.WriteLine("Grid {0}", i);
         return true;
     }
 
-    public bool CanConnect(Vector3i position)
+    public bool CanConnect(BlockPipeConnection block, Vector3i position, BlockValue bv)
     {
-
-        PipeGridConnection connection;
+        bool hasOneAround = false;
+        PipeGridConnection neighbour;
         List<PipeGridConnection> neighbours = new List<PipeGridConnection>();
-        if (TryGetNode(position + Vector3i.up, out connection)) neighbours.Add(connection);
-        if (TryGetNode(position + Vector3i.left, out connection)) neighbours.Add(connection);
-        if (TryGetNode(position + Vector3i.forward, out connection)) neighbours.Add(connection);
-        if (TryGetNode(position + Vector3i.right, out connection)) neighbours.Add(connection);
-        if (TryGetNode(position + Vector3i.back, out connection)) neighbours.Add(connection);
-        if (TryGetNode(position + Vector3i.down, out connection)) neighbours.Add(connection);
+
+        for (int side = 0; side < 6; side++)
+        {
+            // Check we can connect at side
+            var offset = FullRotation.Vector[side];
+            // Try to fetch the node at the given side
+            if (TryGetNode(position + offset, out neighbour))
+            {
+                hasOneAround = true;
+                // Condition may look weird, but we allow to place blocks
+                // next to each other if they don't share any exit. If only
+                // one exit aligns with the new block, we don't allow it.
+                if (neighbour.CanConnect(FullRotation.Mirror(side))
+                    == block.CanConnect(side, bv.rotation))
+                {
+                    neighbours.Add(neighbour);
+                }
+            }
+        }
+        // Somehow it all has to start
+        if (hasOneAround == false) return true;
+        // Log.Out("Has Neighbours {0}", neighbours.Count);
         // OK if no grid to connect yet (first block)
-        if (neighbours.Count == 0) return true;
+        if (neighbours.Count == 0) return false;
         // Check length requirement for single grid
         if (neighbours.Count == 1)
         {

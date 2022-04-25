@@ -102,6 +102,7 @@
     <Compile Include="Library\PlantHarvester.cs" />
     <Compile Include="Library\PlantManager.cs" />
     <Compile Include="Library\PlantGrowing.cs" />
+    <Compile Include="Library\FullRotation.cs" />
     <Compile Include="Library\ScheduledTick.cs" />
     <Compile Include="Library\SingletonInstance.cs" />
     <Compile Include="Library\TileEntityAutoHarvest.cs" />

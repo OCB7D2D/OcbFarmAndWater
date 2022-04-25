@@ -13,13 +13,6 @@ public class PipeGridConnection : PipeGridNode
     public int PowerIndex = int.MaxValue;
     public int DistanceToSource = int.MaxValue;
 
-    public static int OppositeDirection(int dir)
-    {
-        if (dir < 0) throw new ArgumentOutOfRangeException();
-        if (dir > 5) throw new ArgumentOutOfRangeException();
-        return dir > 2 ? dir - 3 : dir + 3;
-    }
-
     public PipeGridConnection[] Neighbours = new PipeGridConnection[6];
 
     public PipeGridConnection Up { get => Neighbours[0]; set => Neighbours[0] = value; }
@@ -28,6 +21,12 @@ public class PipeGridConnection : PipeGridNode
     public PipeGridConnection Down { get => Neighbours[3]; set => Neighbours[3] = value; }
     public PipeGridConnection Right { get => Neighbours[4]; set => Neighbours[4] = value; }
     public PipeGridConnection Back { get => Neighbours[5]; set => Neighbours[5] = value; }
+
+    public PipeGridConnection this[int index]
+    {
+        get => Neighbours[index];
+        set => Neighbours[index] = value;
+    }
 
     public PipeGridConnection(Vector3i position, BlockValue block)
         : base(position, block)
@@ -86,60 +85,6 @@ public class PipeGridConnection : PipeGridNode
             = new List<PipeGridConnection>();
         GetNeighbours(ref neighbours);
         return neighbours;
-    }
-
-    static HashSet<PipeGridConnection> seen =
-        new HashSet<PipeGridConnection>();
-
-    public void PropagateGridChange(PipeGridConnection prev)
-    {
-        if (Grid != null && Grid != prev.Grid)
-        {
-            // Take the grid from the source
-            Grid.RemoveConnection(this);
-        }
-        if (Grid != prev.Grid)
-        {
-            Grid = prev.Grid;
-            Grid.AddConnection(this);
-        }
-        else
-        {
-            Log.Out("Abort cycle");
-            return;
-        }
-        for (int i = 0; i < 6; i++)
-        {
-            var neighbour = Neighbours[i];
-            // Don't move backwards
-            if (neighbour == prev) continue;
-            // Can't propagate to non existing
-            if (neighbour == null) continue;
-            // Neighbour already belongs to us
-            if (neighbour.Grid == Grid)
-            {
-                Log.Warning("Detected Cyclic 1");
-                Grid.IsCyclic = true;
-                continue;
-            }
-            // Make sure to avoid endless loops
-            if (seen.Contains(neighbour))
-            {
-                Grid.IsCyclic = true;
-                // Looks like our other condition works?
-                Log.Warning("Detected Cyclic 2");
-                break;
-            }
-            try
-            {
-                seen.Add(neighbour);
-                neighbour.PropagateGridChange(this);
-            }
-            finally
-            {
-                seen.Remove(neighbour);
-            }
-        }
     }
 
     public static PipeGridOutput Read(BinaryReader br)
@@ -212,9 +157,9 @@ public class PipeGridConnection : PipeGridNode
         {
             Walker walk = todo.Dequeue();
             dist = Utils.FastMax(dist, walk.dist);
-            for (var i = 0; i < 6; i++)
+            for (var side = 0; side < 6; side++)
             {
-                var neighbour = walk.cur.Neighbours[i];
+                var neighbour = walk.cur.Neighbours[side];
                 if (neighbour == null) continue;
                 if (neighbour == walk.prev) continue;
                 if (neighbour.BreakDistance()) continue;
@@ -225,6 +170,80 @@ public class PipeGridConnection : PipeGridNode
         todo.Clear();
         return dist;
     }
+
+    static uint WalkerIDs = 0;
+
+    private struct Propagater
+    {
+        public PipeGridConnection Cur;
+        public PipeGridConnection Prev;
+        public uint WalkID;
+        public Propagater(PipeGridConnection cur, PipeGridConnection prev = null, uint walkID = 0)
+        {
+
+            Cur = cur;
+            Prev = prev;
+            if (walkID != 0) WalkID = walkID;
+            else WalkID = ++WalkerIDs;
+        }
+    }
+
+    private static Queue<Propagater> propagate
+        = new Queue<Propagater>();
+
+    public void PropagateGridChange(PipeGridConnection prev)
+    {
+        // Enqueue ourself as the starting point
+        propagate.Enqueue(new Propagater(this, prev));
+        // Process until no more tree nodes
+        while (propagate.Count > 0)
+        {
+            // Get first item from the queue to process
+            Propagater propagater = propagate.Dequeue();
+            // Check if the grid actually changes
+            if (propagater.Cur.Grid != propagater.Prev.Grid)
+            {
+                // Check if old item has a grid
+                if (propagater.Cur.Grid != null)
+                {
+                    // Remove from old grid before changing
+                    propagater.Cur.Grid.RemoveConnection(this);
+                }
+                // Update the current grid to match previous
+                propagater.Cur.Grid = propagater.Prev.Grid;
+                // Register new connection on new grid
+                propagater.Cur.Grid.AddConnection(this);
+            }
+            // Process all potential neighbours
+            for (var side = 0; side < 6; side++)
+            {
+                // Get optional neighbour of given side
+                var neighbour = propagater.Cur.Neighbours[side];
+                // Skip non existing neighbour
+                if (neighbour == null) continue;
+                // Don't walk backwards in the tree
+                if (neighbour == propagater.Prev) continue;
+                // Detect cyclic case by checking our walk id
+                if (propagater.Cur.LastWalker == propagater.WalkID)
+                {
+                    // Mark the grid cyclic and abort here
+                    propagater.Cur.Grid.IsCyclic = true;
+                }
+                else
+                {
+                    // Propagate to neighbour tree node
+                    propagate.Enqueue(new Propagater(
+                        neighbour, propagater.Cur,
+                        propagater.WalkID));
+                }
+            }
+            // Store our walk id to detect cyclic cases
+            propagater.Cur.LastWalker = propagater.WalkID;
+        }
+        // Make sure to clean up
+        propagate.Clear();
+    }
+
 
     public virtual bool IsConnection() => true;
     public virtual bool BreakDistance() => false;

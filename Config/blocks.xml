@@ -1,0 +1,273 @@
+<configs>
+
+	<append xpath="/blocks/block[@name='plantedMushroom3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedMushroom1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedYucca3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedYucca1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedCotton3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedCotton1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedCoffee3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedCoffee1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedGoldenrod3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedGoldenrod1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedAloe3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedAloe1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedBlueberry3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedBlueberry1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedPotato3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedPotato1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedChrysanthemum3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedChrysanthemum1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedCorn3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedCorn1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedGraceCorn3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedGraceCorn1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedHop3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedHop1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedSnowberry3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedSnowberry1"/>
+	</append>
+	<append xpath="/blocks/block[@name='plantedPumpkin3Harvest']">
+		<property name="AutoHarvestable" value="true"/>
+		<property name="HarvestReplaceBlock" value="plantedPumpkin1"/>
+	</append>
+
+	<append xpath="/blocks">
+		<block name="ocbBlockAutoHarvest">
+			<property name="UnlockedBy" value="perkAdvancedEngineering"/>
+			<property name="CreativeMode" value="Player"/>
+			<property name="Tags" value="door"/>
+			<property name="Class" value="AutoHarvest, AutoHarvest"/>
+			<property name="CustomIcon" value="AutoHarvest"/>
+			<property name="Material" value="Msteel"/>
+			<property name="StabilitySupport" value="true"/>
+			<property name="Shape" value="ModelEntity" />
+			<property name="Model" value="#@modfolder:Resources/AutoHarvest.unity3d?AutoHarvestPrefab" />
+			<property name="IsTerrainDecoration" value="false"/>
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket"/>
+			<property name="LootList" value="storageCrate"/>
+			<property name="LPHardnessScale" value="8"/>
+			<property name="Group" value="Basics,Building,advBuilding"/>
+			<property name="DescriptionKey" value="ocbBlockAutoHarvestDesc"/>
+			<property name="EconomicValue" value="10"/>
+			<property name="EconomicBundleSize" value="10"/>
+			<property name="FilterTags" value="floot"/>
+			<property name="DisplayType" value="blockHardened"/>
+
+			<property class="RepairItems">
+				<property name="resourceForgedSteel" value="40"/>
+				<property name="resourceElectricParts" value="40"/>
+				<property name="resourceMechanicalParts" value="10"/>
+			</property>
+
+			<drop event="Destroy" name="resourceForgedSteel" count="5,10"/>
+			<drop event="Destroy" name="resourceElectricParts" count="5,20" tag="salvageHarvest"/>
+			<drop event="Destroy" name="resourceMechanicalParts" count="5,10" tag="salvageHarvest"/>
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1"/>
+
+			<property name="CanPickup" value="true" />
+			<property name="TakeDelay" value="30"/>
+			<property name="RequiredPower" value="20"/>
+			<property name="AutoHarvestSpeed" value="4"/>
+			<property name="LookupsPerTick" value="2000"/>
+
+		</block>
+
+		<block name="ocbWaterPipeSource">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Tags" value="door"/>
+			<property name="Class" value="PipeSource, AutoHarvest"/>
+			<property name="CustomIcon" value="AutoHarvest"/>
+			<property name="Material" value="Msteel"/>
+			<property name="StabilitySupport" value="true"/>
+			<property name="Shape" value="ModelEntity" />
+			<property name="Model" value="#@modfolder:Resources/AutoHarvest.unity3d?WaterGridSourcePrefab" />
+			<property name="IsTerrainDecoration" value="false"/>
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket"/>
+			<property name="Group" value="Basics,Building,advBuilding"/>
+			<property name="DescriptionKey" value="ocbWaterPipeSource"/>
+			<property name="EconomicValue" value="10"/>
+			<property name="EconomicBundleSize" value="10"/>
+			<property name="FilterTags" value="floot"/>
+			<property name="DisplayType" value="blockHardened"/>
+
+			<property class="RepairItems">
+				<property name="resourceForgedSteel" value="40"/>
+				<property name="resourceElectricParts" value="40"/>
+				<property name="resourceMechanicalParts" value="10"/>
+			</property>
+
+			<drop event="Destroy" name="resourceForgedSteel" count="5,10"/>
+			<drop event="Destroy" name="resourceElectricParts" count="5,20" tag="salvageHarvest"/>
+			<drop event="Destroy" name="resourceMechanicalParts" count="5,10" tag="salvageHarvest"/>
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1"/>
+
+			<property name="CanPickup" value="true" />
+			<property name="TakeDelay" value="30"/>
+			<property name="RequiredPower" value="20"/>
+			<property name="AutoHarvestSpeed" value="4"/>
+			<property name="LookupsPerTick" value="2000"/>
+
+			<property name="WaterPipeSource" value="true"/>
+			<property name="DisplayInfo" value="Custom" />
+
+		</block>
+
+		<block name="ocbWaterPipeOutput">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Tags" value="door"/>
+			<property name="Class" value="PipeOutput, AutoHarvest"/>
+			<property name="CustomIcon" value="AutoHarvest"/>
+			<property name="Material" value="Msteel"/>
+			<property name="StabilitySupport" value="true"/>
+			<property name="Shape" value="ModelEntity" />
+			<property name="Model" value="#@modfolder:Resources/AutoHarvest.unity3d?WaterGridOutputPrefab" />
+			<property name="IsTerrainDecoration" value="false"/>
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket"/>
+			<property name="Group" value="Basics,Building,advBuilding"/>
+			<property name="DescriptionKey" value="ocbWaterPipeSource"/>
+			<property name="EconomicValue" value="10"/>
+			<property name="EconomicBundleSize" value="10"/>
+			<property name="FilterTags" value="floot"/>
+			<property name="DisplayType" value="blockHardened"/>
+
+			<property class="RepairItems">
+				<property name="resourceForgedSteel" value="40"/>
+				<property name="resourceElectricParts" value="40"/>
+				<property name="resourceMechanicalParts" value="10"/>
+			</property>
+
+			<drop event="Destroy" name="resourceForgedSteel" count="5,10"/>
+			<drop event="Destroy" name="resourceElectricParts" count="5,20" tag="salvageHarvest"/>
+			<drop event="Destroy" name="resourceMechanicalParts" count="5,10" tag="salvageHarvest"/>
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1"/>
+
+			<!--<property name="CanPickup" value="true" />
+			<property name="TakeDelay" value="30"/>-->
+			<property name="RequiredPower" value="20"/>
+			<property name="AutoHarvestSpeed" value="4"/>
+			<property name="LookupsPerTick" value="2000"/>
+
+			<property name="WaterPipeOut" value="true"/>
+			<property name="DisplayInfo" value="Custom" />
+
+		</block>
+
+
+		<block name="ocbWaterPipeWell">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Tags" value="door"/>
+			<property name="Class" value="PipeWell, AutoHarvest"/>
+			<property name="CustomIcon" value="AutoHarvest"/>
+			<property name="Material" value="Msteel"/>
+			<property name="StabilitySupport" value="false"/>
+			<property name="Shape" value="ModelEntity" />
+			<property name="Model" value="#@modfolder:Resources/AutoHarvest.unity3d?WaterGridWellPrefab" />
+			<property name="IsTerrainDecoration" value="false"/>
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket"/>
+			<property name="Group" value="Basics,Building,advBuilding"/>
+			<property name="DescriptionKey" value="ocbWaterPipeSource"/>
+			<property name="EconomicValue" value="10"/>
+			<property name="EconomicBundleSize" value="10"/>
+			<property name="FilterTags" value="floot"/>
+			<property name="DisplayType" value="blockHardened"/>
+
+			<property class="RepairItems">
+				<property name="resourceForgedSteel" value="40"/>
+				<property name="resourceElectricParts" value="40"/>
+				<property name="resourceMechanicalParts" value="10"/>
+			</property>
+
+			<drop event="Destroy" name="resourceForgedSteel" count="5,10"/>
+			<drop event="Destroy" name="resourceElectricParts" count="5,20" tag="salvageHarvest"/>
+			<drop event="Destroy" name="resourceMechanicalParts" count="5,10" tag="salvageHarvest"/>
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1"/>
+
+			<!--<property name="CanPickup" value="true" />
+			<property name="TakeDelay" value="30"/>-->
+			<property name="RequiredPower" value="20"/>
+			<property name="AutoHarvestSpeed" value="4"/>
+			<property name="LookupsPerTick" value="2000"/>
+
+			<property name="WaterPipeOut" value="true"/>
+			<property name="DisplayInfo" value="Custom" />
+
+			<property name="DisplayType" value="blockMulti"/>
+			<property name="MultiBlockDim" value="3,3,3"/>
+
+		</block>
+
+		<block name="ocbWaterPipePump">
+			<property name="CreativeMode" value="Player"/>
+			<property name="Tags" value="door"/>
+			<property name="Class" value="PipePump, AutoHarvest"/>
+			<property name="CustomIcon" value="AutoHarvest"/>
+			<property name="Material" value="Msteel"/>
+			<property name="StabilitySupport" value="true"/>
+			<property name="Shape" value="ModelEntity" />
+			<property name="Model" value="#@modfolder:Resources/AutoHarvest.unity3d?WaterGridPumpPrefab" />
+			<property name="IsTerrainDecoration" value="false"/>
+			<property name="Collide" value="movement,melee,bullet,arrow,rocket"/>
+			<property name="Group" value="Basics,Building,advBuilding"/>
+			<property name="DescriptionKey" value="ocbWaterPipeSource"/>
+			<property name="EconomicValue" value="10"/>
+			<property name="EconomicBundleSize" value="10"/>
+			<property name="FilterTags" value="floot"/>
+			<property name="DisplayType" value="blockHardened"/>
+
+			<property class="RepairItems">
+				<property name="resourceForgedSteel" value="40"/>
+				<property name="resourceElectricParts" value="40"/>
+				<property name="resourceMechanicalParts" value="10"/>
+			</property>
+
+			<drop event="Destroy" name="resourceForgedSteel" count="5,10"/>
+			<drop event="Destroy" name="resourceElectricParts" count="5,20" tag="salvageHarvest"/>
+			<drop event="Destroy" name="resourceMechanicalParts" count="5,10" tag="salvageHarvest"/>
+			<drop event="Fall" name="scrapMetalPile" count="1" prob="0.75" stick_chance="1"/>
+
+			<!--
+			<property name="CanPickup" value="true" />
+			<property name="TakeDelay" value="30"/>
+			-->
+			<property name="RequiredPower" value="20"/>
+			<property name="AutoHarvestSpeed" value="4"/>
+			<property name="LookupsPerTick" value="2000"/>
+
+			<property name="WaterPipePump" value="true"/>
+			<property name="DisplayInfo" value="Custom" />
+
+		</block>
+	</append>
+
+	<append xpath="/blocks/block[starts-with(@name, 'metalPipe')]">
+		<property name="Class" value="PipeConnection, AutoHarvest" />
+		<property name="DisplayInfo" value="Custom" />
+	</append>
+
+</configs>

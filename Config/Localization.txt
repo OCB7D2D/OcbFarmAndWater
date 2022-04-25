@@ -1,0 +1,3 @@
+Key,File,Type,UsedInMainMenu,english
+ocbBlockAutoHarvest,UI,Menu,,Auto Harvest Plants
+ocbBlockAutoHarvestDesc,UI,Menu,,Automatically harvests plants in close perimeter and puts harvested crops in a chest next to it.

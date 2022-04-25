@@ -71,6 +71,23 @@ public class PipeGridConnection : PipeGridNode
         return count;
     }
 
+    public void GetNeighbours(ref List<PipeGridConnection> neighbours)
+    {
+        foreach (var neighbour in Neighbours)
+        {
+            if (neighbour == null) continue;
+            neighbours.Add(neighbour);
+        }
+    }
+
+    public List<PipeGridConnection> GetNeighbours()
+    {
+        List<PipeGridConnection> neighbours
+            = new List<PipeGridConnection>();
+        GetNeighbours(ref neighbours);
+        return neighbours;
+    }
+
     static HashSet<PipeGridConnection> seen =
         new HashSet<PipeGridConnection>();
 
@@ -86,6 +103,11 @@ public class PipeGridConnection : PipeGridNode
             Grid = prev.Grid;
             Grid.AddConnection(this);
         }
+        else
+        {
+            Log.Out("Abort cycle");
+            return;
+        }
         for (int i = 0; i < 6; i++)
         {
             var neighbour = Neighbours[i];
@@ -93,11 +115,30 @@ public class PipeGridConnection : PipeGridNode
             if (neighbour == prev) continue;
             // Can't propagate to non existing
             if (neighbour == null) continue;
+            // Neighbour already belongs to us
+            if (neighbour.Grid == Grid)
+            {
+                Log.Warning("Detected Cyclic 1");
+                Grid.IsCyclic = true;
+                continue;
+            }
             // Make sure to avoid endless loops
-            if (seen.Contains(neighbour)) continue;
-            seen.Add(neighbour); // Protection
-            neighbour.PropagateGridChange(this);
-            // seen.Remove(neighbour); // Protection
+            if (seen.Contains(neighbour))
+            {
+                Grid.IsCyclic = true;
+                // Looks like our other condition works?
+                Log.Warning("Detected Cyclic 2");
+                break;
+            }
+            try
+            {
+                seen.Add(neighbour);
+                neighbour.PropagateGridChange(this);
+            }
+            finally
+            {
+                seen.Remove(neighbour);
+            }
         }
     }
 
@@ -158,32 +199,13 @@ public class PipeGridConnection : PipeGridNode
 
     private static bool BreakDistance(PipeGridConnection connection) => connection.BreakDistance();
 
-    public int Walk(Func<PipeGridConnection, bool> breaker)
-    {
-        int dist = 0;
-        if (breaker(this)) return dist;
-        todo.Enqueue(new Walker(this));
-        while (todo.Count > 0)
-        {
-            Walker walk = todo.Dequeue();
-            dist = Utils.FastMax(dist, walk.dist);
-            for (var i = 0; i < 6; i++)
-            {
-                var neighbour = walk.cur.Neighbours[i];
-                if (neighbour == null) continue;
-                if (neighbour == walk.prev) continue;
-                if (breaker(neighbour)) continue;
-                todo.Enqueue(new Walker(neighbour,
-                    walk.cur, walk.dist + 1));
-            }
-        }
-        todo.Clear();
-        return dist;
-    }
-
     public int CountLongestDistance()
     {
         int dist = 0;
+        if (Grid.IsCyclic)
+        {
+            return int.MaxValue;
+        }
         if (BreakDistance()) return dist;
         todo.Enqueue(new Walker(this));
         while (todo.Count > 0)

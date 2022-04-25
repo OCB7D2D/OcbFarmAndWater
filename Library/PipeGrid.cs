@@ -22,6 +22,8 @@ public class PipeGrid
 
     int Count = 0;
 
+    public bool IsCyclic = false;
+
     public PipeGrid()
     {
     }
@@ -57,6 +59,7 @@ public class PipeGrid
         {
             Console.WriteLine("Removing grid now");
             PipeGridManager.Instance.RemoveGrid(this);
+            FirstPosition = Vector3i.min;
         }
         // Connections.Remove(connection);
     }

@@ -256,6 +256,47 @@ public class PipeGridManager : PersistedData<PipeGridManager>
 
     }
 
+
+    // Reuse list 
+    static List<PipeGridConnection> _neighbours
+        = new List<PipeGridConnection>();
+
+    public void RemoveConnection(Vector3i position)
+    {
+        if (Connections.TryGetValue(position,
+            out PipeGridConnection connection))
+        {
+            if (connection.Grid != null)
+            {
+                // First remove from  the existing grid
+                // Simply counts and disposes empty grids
+                connection.Grid.RemoveConnection(connection);
+                // Get valid neighbours as a list
+                connection.GetNeighbours(ref _neighbours);
+                // Check if we should split the grid(s) again
+                for (int i = 1; i < _neighbours.Count; i++)
+                {
+                    // Assign new grid to current connection
+                    connection.Grid = new PipeGrid();
+                    // Propagate that change into neighbour tree
+                    _neighbours[i].PropagateGridChange(connection);
+                }
+                // Clear re-used list
+                _neighbours.Clear();
+            }
+            else
+            {
+                Log.Warning("Known connection doesn't have grid!?");
+            }
+            // Remove from connections
+            Connections.Remove(position);
+        }
+        else
+        {
+            Log.Warning("Removing connection that isn't known!?");
+        }
+    }
+
     public static void Cleanup()
     {
         if (instance == null) return;
@@ -271,11 +312,6 @@ public class PipeGridManager : PersistedData<PipeGridManager>
         instance = null;
     }
 
-
-    public void RemoveConnection(Vector3i position)
-    {
-        Connections.Remove(position);
-    }
 
     public bool TryGetNode<T>(Vector3i position, out T node) where T : PipeGridNode
     {

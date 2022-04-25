@@ -73,6 +73,7 @@
     <Compile Include="Harmony\OcbAutoHarvest.cs" />
     <Compile Include="Harmony\AssemblyInfo.cs" />
     <Compile Include="Library\AutoHarvestCmd.cs" />
+    <Compile Include="Library\GridPipeNode.cs" />
     <Compile Include="Library\IBlockPipeNode.cs" />
     <Compile Include="Library\PipeGridManagerCmd.cs" />
     <Compile Include="Library\BlockAutoHarvest.cs" />
@@ -85,15 +86,16 @@
     <Compile Include="Library\BoundHelperManager.cs" />
     <Compile Include="Library\IGrowParameters.cs" />
     <Compile Include="Library\IPoweredNode.cs" />
-    <Compile Include="Library\ITickable.cs" />
+    <Compile Include="Utils\BlockHelper.cs" />
+    <Compile Include="Utils\ITickable.cs" />
     <Compile Include="Library\NetPkgBoundHelperToClient.cs" />
     <Compile Include="Library\NetPkgBoundHelperToServer.cs" />
     <Compile Include="Library\NetPkgCustomInfo.cs" />
-    <Compile Include="Library\PersistedData.cs" />
+    <Compile Include="Utils\PersistedData.cs" />
     <Compile Include="Library\PipeGrid.cs" />
     <Compile Include="Library\PipeGridManager.cs" />
     <Compile Include="Library\PipeGridConnection.cs" />
-    <Compile Include="Library\PipeGridNode.cs" />
+    <Compile Include="Library\WorldNode.cs" />
     <Compile Include="Library\PipeGridOutput.cs" />
     <Compile Include="Library\PipeGridWell.cs" />
     <Compile Include="Library\PipeGridSource.cs" />
@@ -103,10 +105,10 @@
     <Compile Include="Library\PlantHarvester.cs" />
     <Compile Include="Library\PlantManager.cs" />
     <Compile Include="Library\PlantGrowing.cs" />
-    <Compile Include="Library\FullRotation.cs" />
-    <Compile Include="Library\ScheduledTick.cs" />
-    <Compile Include="Library\SingletonInstance.cs" />
-    <Compile Include="Library\TileEntityAutoHarvest.cs" />
+    <Compile Include="Utils\FullRotation.cs" />
+    <Compile Include="Utils\ScheduledTick.cs" />
+    <Compile Include="Utils\ScheduledTicker.cs" />
+    <Compile Include="Utils\SingletonInstance.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Config\blocks.xml" />

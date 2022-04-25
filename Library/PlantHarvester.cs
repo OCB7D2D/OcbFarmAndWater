@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class PlantHarvester : ITickable
+public class PlantHarvester : WorldNode, ITickable
 {
 
     private readonly float BoundHelperSize = 2.59f;
@@ -35,8 +35,6 @@ public class PlantHarvester : ITickable
 
     public bool IsLoaded = false;
 
-    public Vector3i WorldPos = Vector3i.zero;
-
     // Drop crops to the ground if container is full?
     public bool DropSurplusCrops = true;
 
@@ -50,7 +48,7 @@ public class PlantHarvester : ITickable
 
     public bool GetIsLoaded()
     {
-        return PlantManager.GetIsLoaded(WorldPos);
+        return BlockHelper.IsLoaded(WorldPos);
     }
 
     public Vector3i ToWorldPos() => WorldPos;
@@ -138,10 +136,8 @@ public class PlantHarvester : ITickable
 
     }
 
-    public PlantHarvester(Vector3i worldPos)
-    {
-        WorldPos = worldPos;
-    }
+    public PlantHarvester(Vector3i worldPos, BlockValue block)
+        : base(worldPos, block) {}
 
     public bool CanHarvestBlock(Block block)
     {
@@ -172,8 +168,8 @@ public class PlantHarvester : ITickable
             if (PlantManager.Instance.Harvestable.TryGetValue(
                 randomPos, out PlantHarvestable type))
             {
-                if (type.BlockId == BlockValue.Air.type) continue;
-                if (CanHarvestBlock(Block.list[type.BlockId]))
+                if (type.BlockID == BlockValue.Air.type) continue;
+                if (CanHarvestBlock(Block.list[type.BlockID]))
                 {
 //                    Log.Out("Can Harvest");
                     HarvestPosition = randomPos;
@@ -269,16 +265,16 @@ public class PlantHarvester : ITickable
     public void HarvestCrop(WorldBase world)
     {
 
-        if (HarvestBlock == null || Block.list[HarvestBlock.BlockId] == null)
+        if (HarvestBlock == null || Block.list[HarvestBlock.BlockID] == null)
         {
-            Log.Warning("HarvestBlockType not existing? {0}", HarvestBlock.BlockId);
+            Log.Warning("HarvestBlockType not existing? {0}", HarvestBlock.BlockID);
             return;
         }
 
-        string replacekName = Block.list[HarvestBlock.BlockId].Properties.GetString("HarvestReplaceBlock");
+        string replacekName = Block.list[HarvestBlock.BlockID].Properties.GetString("HarvestReplaceBlock");
         if (string.IsNullOrEmpty(replacekName)) Log.Error("Missing HarvestReplaceBlock property");
 
-        if (Block.list[HarvestBlock.BlockId].itemsToDrop.TryGetValue(EnumDropEvent.Harvest,
+        if (Block.list[HarvestBlock.BlockID].itemsToDrop.TryGetValue(EnumDropEvent.Harvest,
             out List<Block.SItemDropProb> sitemDropProbList))
         {
             if (sitemDropProbList == null)
@@ -367,13 +363,13 @@ public class PlantHarvester : ITickable
     {
         var current = PlantManager.GetHarvestable(HarvestPosition);
         // Check if any of the stats changed after we acquired to block
-        if (current != HarvestBlock.BlockId)
+        if (current != HarvestBlock.BlockID)
         {
             // Reset the acquired block and play a sound bit
             // Play different sound according to reason of disconnect
             // Block has been switched (maybe destroyed, upgraded, etc.)
             // Block has been damaged again, abort repair on progress
-            ResetAcquiredBlock(current != HarvestBlock.BlockId ?
+            ResetAcquiredBlock(current != HarvestBlock.BlockID ?
                 "weapon_jam" : "ItemNeedsRepair");
             return false;
         }
@@ -386,7 +382,7 @@ public class PlantHarvester : ITickable
         if (HarvestProgress >= 1f)
         {
             // Safety check if materials have changed
-            if (!CanHarvestBlock(Block.list[HarvestBlock.BlockId]))
+            if (!CanHarvestBlock(Block.list[HarvestBlock.BlockID]))
             {
 //                Log.Out("Can't harvest {0}", Block.list[HarvestBlockType].GetBlockName());
                 // Inventory seems to have changed (not repair possible)
@@ -436,20 +432,14 @@ public class PlantHarvester : ITickable
         RegisterScheduled(tick);
     }
 
-    public void Write(BinaryWriter bw)
+    public override void Write(BinaryWriter bw)
     {
-        bw.Write(WorldPos.x);
-        bw.Write(WorldPos.y);
-        bw.Write(WorldPos.z);
+        base.Write(bw);
     }
 
-    public static PlantHarvester Read(BinaryReader br)
+    public PlantHarvester(BinaryReader br)
+        : base (br)
     {
-        int x = br.ReadInt32();
-        int y = br.ReadInt32();
-        int z = br.ReadInt32();
-        return new PlantHarvester(
-            new Vector3i(x, y, z));
     }
 
     private Color GetProgressColor(Color target, float progress)

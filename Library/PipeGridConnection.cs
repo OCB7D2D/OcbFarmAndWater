@@ -5,13 +5,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public class PipeGridConnection : PipeGridNode
+public class PipeGridConnection : WorldNode
 {
 
     public PipeGrid Grid = null;
 
     public int PowerIndex = int.MaxValue;
     public int DistanceToSource = int.MaxValue;
+
+    // Return block of given type (may return null)
+    public bool Block<T>(out T var) where T : class =>
+        (var = global::Block.list[BlockID] as T) != null;
 
     // Use public API below to keep Count in sync
     private PipeGridConnection[] Neighbours
@@ -35,7 +39,7 @@ public class PipeGridConnection : PipeGridNode
     {
     }
 
-    public override int GetStorageType() => 0;
+    public virtual int GetStorageType() => 0;
 
     public PipeGridConnection(BinaryReader br)
         : base(br)
@@ -71,6 +75,16 @@ public class PipeGridConnection : PipeGridNode
         foreach (var neighbour in Neighbours)
             count += neighbour == null ? 0 : 1;
         return count;
+    }
+
+    public bool CanConnect(int side)
+    {
+        if (Block<BlockPipeConnection>(out var node))
+        {
+            // Rotates question back into local frame
+            return node.CanConnect(side, Rotation);
+        }
+        return false;
     }
 
     public void GetNeighbours(ref List<PipeGridConnection> neighbours)

@@ -5,10 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public class PlantHarvestable : IGrowParameters
+public class PlantHarvestable : WorldNode, IGrowParameters
 {
-    public int BlockId;
-    public Vector3i WorldPos;
 
     public int LightValue;
     public int FertilityLevel;
@@ -18,7 +16,7 @@ public class PlantHarvestable : IGrowParameters
 
     public bool GetIsLoaded(WorldBase world)
     {
-        return PlantManager.GetIsLoaded(WorldPos);
+        return BlockHelper.IsLoaded(world, WorldPos);
     }
 
     public int GetLightLevel(WorldBase world)
@@ -35,39 +33,29 @@ public class PlantHarvestable : IGrowParameters
         return LightValue;
     }
 
-    public PlantHarvestable(Vector3i worldPos, int blockId,
+    public PlantHarvestable(Vector3i position, BlockValue block,
         int lightValue = 0, int fertilityLevel = 0, float harvestProgress = 0f)
+        : base(position, block)
     {
-        WorldPos = worldPos;
-        BlockId = blockId;
         LightValue = lightValue;
         FertilityLevel = fertilityLevel;
         HarvestProgress = harvestProgress;
     }
 
-
-    public void Write(BinaryWriter bw)
+    public override void Write(BinaryWriter bw)
     {
-        bw.Write(WorldPos.x);
-        bw.Write(WorldPos.y);
-        bw.Write(WorldPos.z);
-        bw.Write(BlockId);
+        base.Write(bw);
         bw.Write((byte)LightValue);
         bw.Write((byte)FertilityLevel);
         bw.Write(HarvestProgress);
     }
 
-    public static PlantHarvestable Read(BinaryReader br)
+    public PlantHarvestable(BinaryReader br)
+        : base(br)
     {
-        return new PlantHarvestable(
-            new Vector3i(
-                br.ReadInt32(), // WorldPos.x
-                br.ReadInt32(), // WorldPos.y
-                br.ReadInt32()), // WorldPos.z
-            br.ReadInt32(), // BlockId
-            br.ReadByte(), // LightValue
-            br.ReadByte(), // FertilityLevel
-            br.ReadSingle()); // HarvestProgress
+        LightValue = br.ReadByte();
+        FertilityLevel = br.ReadByte();
+        HarvestProgress = br.ReadSingle();
     }
 
 }

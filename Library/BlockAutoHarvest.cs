@@ -62,7 +62,8 @@ public class BlockAutoHarvest : BlockPowered
 		BlockEntityData _ebcd)
 	{
 		if (_ebcd == null) return;
-		base.OnBlockEntityTransformAfterActivated(_world, _blockPos, _cIdx, _blockValue, _ebcd);
+		base.OnBlockEntityTransformAfterActivated(_world,
+			_blockPos, _cIdx, _blockValue, _ebcd);
 		// if (_world.GetTileEntity(_cIdx, _blockPos) is TileEntityAutoHarvest te)
 		// {
 		// 	te.HarvestSpeed = HarvestSpeed;

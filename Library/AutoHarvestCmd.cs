@@ -27,7 +27,7 @@ public class AutoHarvestCmd : ConsoleCmdAbstract
         Log.Out("Report Harvest:");
         foreach (var i in PlantManager.Instance.Harvestable)
         {
-            Log.Out("  Harvestable {0} => {1}", i.Key, Block.GetBlockValue(i.Value.BlockId).Block.GetBlockName());
+            Log.Out("  Harvestable {0} => {1}", i.Key, Block.GetBlockValue(i.Value.BlockID).Block.GetBlockName());
         }
         Log.Out("Report Harvester:");
         foreach (var i in PlantManager.Instance.Harvester)

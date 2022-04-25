@@ -22,11 +22,13 @@ public class PlantManager : PersistedData<PlantManager>
     // Tick rate to harvest crops (partially)
     // private float HarvestTickRate = 1.8f;
 
+    // Sorted ticks to dispatch work in chunks
+    // You need to drive it from time to time
+    // Will make sure to not over utilize CPU
+    public ScheduledTicker Ticker = new ScheduledTicker();
+
     // Dictionary of all growing plants in the world (either loaded or unloaded chunks)
     public Dictionary<Vector3i, PlantGrowing> Growing = new Dictionary<Vector3i, PlantGrowing>();
-
-    // A set of ticks pre-sorted to dispatch in batches for less CPU strain
-    public SortedSet<ScheduledTick> ScheduledTicks = new SortedSet<ScheduledTick>();
 
     // Dictionary of all harvesters in the world (either loaded or unloaded chunks)
     public Dictionary<Vector3i, PlantHarvester> Harvester = new Dictionary<Vector3i, PlantHarvester>();
@@ -44,15 +46,6 @@ public class PlantManager : PersistedData<PlantManager>
         "{0}/plant-manager5.dat.bak", GameIO.GetSaveGameDir());
     public override string GetThreadKey() => "silent_planManagerDataSave";
 
-    // Static helper function (ToDo: check CPU cost)
-    public static bool GetIsLoaded(Vector3i WorldPos)
-    {
-        if (GameManager.Instance == null) return false;
-        if (GameManager.Instance.World == null) return false;
-        WorldBase world = GameManager.Instance.World;
-        return world.GetChunkFromWorldPos(WorldPos) != null;
-    }
-
     // Constructor
     public PlantManager()
     {
@@ -68,16 +61,12 @@ public class PlantManager : PersistedData<PlantManager>
 
     public static ScheduledTick AddScheduleTick(ulong ticks, ITickable tickable)
     {
-        ScheduledTick scheduled = new ScheduledTick(ticks, tickable);
-        Instance.ScheduledTicks.Add(scheduled);
-        // Log.Out("Scheduled in {2} (left growing: {0}, ticks: {1})",
-        //     Instance.Growing.Count, Instance.ScheduledTicks.Count, ticks);
-        return scheduled;
+        return Instance.Ticker.Schedule(ticks, tickable);
     }
 
     public static void DeleteScheduledTick(ScheduledTick scheduled)
     {
-        Instance.ScheduledTicks.Remove(scheduled);
+        Instance.Ticker.Unschedule(scheduled);
     }
 
     public static bool TryGetGrowing(Vector3i position, out PlantGrowing plant)
@@ -98,34 +87,34 @@ public class PlantManager : PersistedData<PlantManager>
         if (instance == null) return BlockValue.Air.type;
         if (instance.Harvestable.TryGetValue(WorldPos, out PlantHarvestable plant))
         {
-            return plant.BlockId;
+            return plant.BlockID;
         }
         return BlockValue.Air.type;
     }
 
     // Called when growing to next stage or when being (auto) harvested
-    public void UpdateBlockValue(WorldBase world, Vector3i WorldPos, BlockValue next, IGrowParameters current)
+    public void UpdateBlockValue(WorldBase world, Vector3i position, BlockValue next, IGrowParameters current)
     {
         // Check if block is currently loaded
-        if (GetIsLoaded(WorldPos))
+        if (BlockHelper.IsLoaded(world, position))
         {
             // Get current block to copy stuff
-            var block = world.GetBlock(WorldPos);
+            var block = world.GetBlock(position);
             next.rotation = block.rotation;
             next.meta = block.meta;
             next.meta2 = 0;
             // Update world via remote somehow
             Log.Out("UpdateBlockValue 1");
-            world.SetBlockRPC(WorldPos, next);
+            world.SetBlockRPC(position, next);
         }
         else
         {
-            PendingChange[WorldPos] = next.type;
+            PendingChange[position] = next.type;
         }
         if (next.Block is BlockPlantGrowing growing)
         {
             Log.Out("Block is now growing");
-            SetGrowing(WorldPos, 0, next,
+            SetGrowing(position, 0, next,
                 current.GetLightLevel(world),
                 current.GetFertilityLevel(world));
         }
@@ -140,7 +129,7 @@ public class PlantManager : PersistedData<PlantManager>
         }
         else if (addIfNotKnown)
         {
-            harvester = new PlantHarvester(position);
+            harvester = new PlantHarvester(position, block);
             instance.Harvester[position] = harvester;
             harvester.OnLoaded(world);
             harvester.RegisterScheduled(0);
@@ -173,7 +162,7 @@ public class PlantManager : PersistedData<PlantManager>
         }
         else if(addIfNotKnown)
         {
-            plant = new PlantGrowing(position, 0, block.type);
+            plant = new PlantGrowing(position, 0, block);
             instance.Growing[position] = plant;
             plant.OnLoaded(world, position, block);
             plant.RegisterScheduled(0);
@@ -198,7 +187,7 @@ public class PlantManager : PersistedData<PlantManager>
     {
         if (instance == null) return BlockValue.Air.type;
         if (instance.Growing.TryGetValue(position, out PlantGrowing plant))
-            return plant.BlockId;
+            return plant.BlockID;
         return BlockValue.Air.type;
     }
 
@@ -286,21 +275,21 @@ public class PlantManager : PersistedData<PlantManager>
         int growings = br.ReadInt32();
         for (int index = 0; index < growings; ++index)
         {
-            var plant = PlantGrowing.Read(br);
+            var plant = new PlantGrowing(br);
             Growing.Add(plant.WorldPos, plant);
             plant.RegisterScheduled();
         }
         int harvesters = br.ReadInt32();
         for (int index = 0; index < harvesters; ++index)
         {
-            var harvester = PlantHarvester.Read(br);
+            var harvester = new PlantHarvester(br);
             Harvester.Add(harvester.WorldPos, harvester);
             harvester.RegisterScheduled();
         }
         int harvestables = br.ReadInt32();
         for (int index = 0; index < harvestables; ++index)
         {
-            var harvestable = PlantHarvestable.Read(br);
+            var harvestable = new PlantHarvestable(br);
             Harvestable.Add(harvestable.WorldPos, harvestable);
         }
         Log.Warning("!!!!!!! Parsed Growing Plants: {0}", Growing.Count);
@@ -322,13 +311,13 @@ public class PlantManager : PersistedData<PlantManager>
         if (Growing.TryGetValue(position, out PlantGrowing plant))
         {
             // plant.IsLoaded = loaded;
-            plant.BlockId = block.type;
+            plant.BlockID = block.type;
             plant.GrowProgress = 0;
         }
         else
         {
             // This adds a new growing plant, where to get light from?
-            plant = new PlantGrowing(position, clrIdx, block.type,
+            plant = new PlantGrowing(position, clrIdx, block,
                 lightValue, fertilityLevel);
             instance.Growing[position] = plant;
         }
@@ -340,30 +329,17 @@ public class PlantManager : PersistedData<PlantManager>
 
     public void TickScheduled(WorldBase world)
     {
-        int done = 0;
         GrowNow.Clear();
-        var tick = GameTimer.Instance.ticks;
-        int todo = Utils.FastMin(ScheduledTicks.Count, 8);
-        while (ScheduledTicks.Count != 0)
-        {
-            if (done > todo) break;
-            var scheduled = ScheduledTicks.First();
-            if (scheduled.TickTime == ulong.MaxValue) break;
-            if (scheduled.TickTime > tick) break;
-            ScheduledTicks.Remove(scheduled);
-            ulong delta = tick - scheduled.TickStart;
-            scheduled.Object.Tick(world, delta);
-            done += 1;
-        }
+        Ticker.TickScheduled(world);
     }
 
     public void RemoveGrowing(Vector3i position)
     {
         if (Growing.TryGetValue(position, out PlantGrowing plant))
-            ScheduledTicks.Remove(plant.Scheduled);
+            Ticker.Unschedule(plant.Scheduled);
         Growing.Remove(position); // Remove the plant
         Log.Out("Unscheduled (left growing: {0}, ticks: {1})",
-            Growing.Count, ScheduledTicks.Count);
+            Growing.Count, Ticker.Count);
     }
 
     public void AddHarvestable(Vector3i position, PlantHarvestable type)

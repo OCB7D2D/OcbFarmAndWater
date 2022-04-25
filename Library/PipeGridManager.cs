@@ -50,7 +50,7 @@ public class PipeGridManager : PersistedData<PipeGridManager>
 
     public int GridCount { get => Grids.Count; }
 
-    public static List<T> Find<T>(Vector3i position, Vector2i area, Vector2i height) where T : PipeGridNode
+    public static List<T> Find<T>(Vector3i position, Vector2i area, Vector2i height) where T : WorldNode
     {
         List<T> list = new List<T>();
         if (instance == null) return list;
@@ -121,6 +121,12 @@ public class PipeGridManager : PersistedData<PipeGridManager>
             output.AddWell(well);
             well.AddOutput(output);
         }
+        // foreach (var output in Find<PlantGrowing>(
+        //     well.WorldPos, OutputArea, OutputHeight))
+        // {
+        //     output.AddWell(well);
+        //     well.AddOutput(output);
+        // }
         Wells[well.WorldPos] = well;
     }
 
@@ -328,7 +334,7 @@ public class PipeGridManager : PersistedData<PipeGridManager>
     }
 
 
-    public bool TryGetNode<T>(Vector3i position, out T node) where T : PipeGridNode
+    public bool TryGetNode<T>(Vector3i position, out T node) where T : WorldNode
     {
         if (typeof(PipeGridConnection).IsAssignableFrom(typeof(T)))
         {
@@ -416,8 +422,8 @@ public class PipeGridManager : PersistedData<PipeGridManager>
                 // Disallow if only one has a connector
                 else if (a || b) return false;
                 // Check if we would exhaust allowed connections
-                if (a && neighbour.Count >= neighbour
-                    .Block.MaxConnections) return false;
+                if (a && neighbour.Block(out IBlockPipeNode node))
+                    if (neighbour.Count >= node.MaxConnections) return false;
             }
         }
         // Check if we would exhaust our allowed connections

@@ -8,34 +8,44 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class PlantGrowing : ITickable, IGrowParameters
+public class PlantGrowing : WorldNode, ITickable, IGrowParameters
 {
-    public readonly Vector3i WorldPos;
     public readonly int ClrIdx;
-    public int BlockId;
     public ulong StartTick;
 
     public int LightValue;
     public int FertilityLevel;
     public float GrowProgress;
 
+    // List of sprinklers where we get water
+    public List<Vector3i> Sprinklers
+        = new List<Vector3i>();
+
+    // List of wells from where we get water
+    public List<Vector3i> Wells
+        = new List<Vector3i>();
+
+
+    // How does a plant know where it can get water from?
+    // 1) When it is added, scan the perimeter completely
+    // 2) During ticks scan if well has run empty? ???
+
     // public bool IsLoaded { get; set; }
 
     public bool GetIsLoaded()
     {
-        return PlantManager.GetIsLoaded(WorldPos);
+        return BlockHelper.IsLoaded(WorldPos);
     }
 
     public Vector3i ToWorldPos() => WorldPos;
 
     public ScheduledTick Scheduled = null;
 
-    public PlantGrowing(Vector3i worldPos, int clrIdx, int blockId,
+    public PlantGrowing(Vector3i worldPos, int clrIdx, BlockValue block,
         int lightValue = 0, int fertilityLevel = 0, float growProgress = 0)
+        : base(worldPos, block)
     {
         StartTick = GameTimer.Instance.ticks;
-        BlockId = blockId;
-        WorldPos = worldPos;
         ClrIdx = clrIdx;
         // IsLoaded = loaded;
         LightValue = lightValue;
@@ -82,7 +92,7 @@ public class PlantGrowing : ITickable, IGrowParameters
         var fertility = GetFertilityLevel(world);
         GrowProgress += light / 1024f / 8f * delta;
         Log.Out("Ticked {0} (loaded: {1}, progress: {2:0}%, light: {3})",
-            Block.list[BlockId].GetBlockName(),
+            Block.list[BlockID].GetBlockName(),
             GetIsLoaded(), GrowProgress * 100f, light);
         if (GrowProgress < 1f) RegisterScheduled();
         else GrowToNext(world, PlantManager.Instance);
@@ -90,7 +100,7 @@ public class PlantGrowing : ITickable, IGrowParameters
 
     public void OnLoaded(WorldBase world, Vector3i position, BlockValue block)
     {
-        if (BlockId != block.type)
+        if (BlockID != block.type)
         {
             // Log.Warning("Loaded Managed Plant has changed from {0} to {1}",
             //     Block.list[BlockId].GetBlockName(), block.Block.GetBlockName());
@@ -104,7 +114,7 @@ public class PlantGrowing : ITickable, IGrowParameters
 
     public void GrowToNext(WorldBase world, PlantManager manager)
     {
-        int current = BlockId;
+        int current = BlockID;
         // Check if block is currently loaded
         if (GetIsLoaded())
         {
@@ -116,7 +126,7 @@ public class PlantGrowing : ITickable, IGrowParameters
 
         // This should hold true for every plant added to the manager!
         if (current == BlockValue.Air.type) Log.Error("Managed Plant is Air?");
-        BlockPlantGrowing grown = Block.list[current] as BlockPlantGrowing;
+        BlockPlantGrowing grown = Block.list[BlockID] as BlockPlantGrowing;
         if (grown == null) throw new Exception("Invalid Block for growing plant!");
         // Get the replacement via protected/dynamic method call
         BlockValue next = (BlockValue)FieldNextPlant.GetValue(grown);
@@ -125,7 +135,7 @@ public class PlantGrowing : ITickable, IGrowParameters
         {
             Log.Warning("|| Plant moved to next step");
             // Update "cached" state
-            BlockId = next.type;
+            BlockID = next.type;
             // Reset growth timers
             StartTick = GameTimer.Instance.ticks;
         }
@@ -133,7 +143,7 @@ public class PlantGrowing : ITickable, IGrowParameters
         {
             Log.Warning("|| Plant is now fully grown {0}", next.type);
             // Register a harvestable crop
-            var plant = new PlantHarvestable(WorldPos, next.type,
+            var plant = new PlantHarvestable(WorldPos, next,
                 GetLightLevel(world), GetFertilityLevel(world));
             // Add a new plant to grow
             manager.AddHarvestable(plant.WorldPos, plant);
@@ -146,36 +156,26 @@ public class PlantGrowing : ITickable, IGrowParameters
     }
 
 
-    public void Write(BinaryWriter bw)
+    public override void Write(BinaryWriter bw)
     {
+        base.Write(bw);
         // bw.Write(IsLoaded);
         bw.Write(ClrIdx);
-        bw.Write(WorldPos.x);
-        bw.Write(WorldPos.y);
-        bw.Write(WorldPos.z);
-        bw.Write(BlockId);
         bw.Write(StartTick);
         bw.Write(GrowProgress);
         bw.Write((byte)LightValue);
         bw.Write((byte)FertilityLevel);
     }
 
-    public static PlantGrowing Read(BinaryReader br)
+    public PlantGrowing(BinaryReader br)
+        : base(br)
     {
         // bool isLoaded = br.ReadBoolean();
-        int clrIdx = br.ReadInt32();
-        int x = br.ReadInt32();
-        int y = br.ReadInt32();
-        int z = br.ReadInt32();
-        var blockId = br.ReadInt32();
-        var plant = new PlantGrowing(
-            new Vector3i(x, y, z), clrIdx,
-            blockId);
-        plant.StartTick = br.ReadUInt64();
-        plant.GrowProgress = br.ReadSingle();
-        plant.LightValue = br.ReadByte();
-        plant.FertilityLevel = br.ReadByte();
-        return plant;
+        ClrIdx = br.ReadInt32();
+        StartTick = br.ReadUInt64();
+        GrowProgress = br.ReadSingle();
+        LightValue = br.ReadByte();
+        FertilityLevel = br.ReadByte();
     }
 
 }

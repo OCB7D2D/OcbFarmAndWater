@@ -11,4 +11,6 @@ public interface IBlockPipeNode
 
     bool CanConnect(int side, int rotation);
 
+    string GetBlockName();
+
 }

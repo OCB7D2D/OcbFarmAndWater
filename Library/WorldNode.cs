@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-public abstract class PipeGridNode
+public abstract class WorldNode
 {
 
     public int BlockID = 0; // Air
@@ -10,19 +10,16 @@ public abstract class PipeGridNode
     public Vector3i WorldPos { get; private set; }
 
     // ToDo: Introduce BlockPipeNode as abstract base
-    public IBlockPipeNode Block => global::Block
-        .list[BlockID] as IBlockPipeNode;
+    // public virtual Block Block => Block.list[BlockID];
 
-    public PipeGridNode(Vector3i position, BlockValue block)
+    public WorldNode(Vector3i position, BlockValue block)
     {
         BlockID = block.type;
         WorldPos = position;
         Rotation = block.rotation;
     }
 
-    public abstract int GetStorageType();
-
-    public PipeGridNode(BinaryReader br)
+    public WorldNode(BinaryReader br)
     {
         BlockID = br.ReadInt32();
         WorldPos = new Vector3i(
@@ -39,12 +36,6 @@ public abstract class PipeGridNode
         bw.Write(WorldPos.y);
         bw.Write(WorldPos.z);
         bw.Write(Rotation);
-    }
-
-    public bool CanConnect(int side)
-    {
-        // Rotates question back into local frame
-        return Block.CanConnect(side, Rotation);
     }
 
 }

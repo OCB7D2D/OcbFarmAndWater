@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-public class PipeGridWell : PipeGridNode
+public class PipeGridWell : WorldNode
 {
 
     public uint MaxWaterLevel = 150;
@@ -22,8 +22,6 @@ public class PipeGridWell : PipeGridNode
     public static int StorageType => 9;
 
     public float WaterNeeded { get => MaxWaterLevel - WaterAvailable; }
-
-    public override int GetStorageType() => StorageType;
 
     public PipeGridWell(BinaryReader br)
         : base(br)

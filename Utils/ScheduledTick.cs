@@ -7,7 +7,6 @@ public class ScheduledTick : IComparer<ScheduledTick>, System.IComparable<Schedu
     public ITickable Object;
     public ulong TickTime;
     public ulong TickStart;
-    GlobalTicker Ticker;
 
     public int Compare(ScheduledTick x, ScheduledTick y)
     {
@@ -22,21 +21,19 @@ public class ScheduledTick : IComparer<ScheduledTick>, System.IComparable<Schedu
         return Compare(this, b);
     }
 
-    public ScheduledTick(ulong start, ulong time, ITickable tickable, GlobalTicker manager)
+    public ScheduledTick(ulong start, ulong time, ITickable tickable)
     {
         TickStart = start;
         TickTime = time;
         Object = tickable;
-        Ticker = manager;
     }
 
-    public ScheduledTick(ulong offset, ITickable tickable, GlobalTicker manager)
+    public ScheduledTick(ulong offset, ITickable tickable)
     {
         TickStart = GameTimer.Instance.ticks;
         TickTime = TickStart + offset;
         TickTime += (ulong)Random.Range(0, 30);
         Object = tickable;
-        Ticker = manager;
     }
 
 }

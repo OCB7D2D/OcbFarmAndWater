@@ -167,7 +167,7 @@ public class PlantHarvester : WorldNode, ITickable
                 randomPos, out PlantHarvestable type))
             {
                 if (type.BlockID == BlockValue.Air.type) continue;
-                if (CanHarvestBlock(Block.list[type.BlockID]))
+                if (CanHarvestBlock(type.GetBlock()))
                 {
 //                    Log.Out("Can Harvest");
                     HarvestPosition = randomPos;
@@ -263,16 +263,16 @@ public class PlantHarvester : WorldNode, ITickable
     public void HarvestCrop(WorldBase world)
     {
 
-        if (HarvestBlock == null || Block.list[HarvestBlock.BlockID] == null)
+        if (HarvestBlock == null || HarvestBlock.GetBlock() == null)
         {
             Log.Warning("HarvestBlockType not existing? {0}", HarvestBlock.BlockID);
             return;
         }
 
-        string replacekName = Block.list[HarvestBlock.BlockID].Properties.GetString("HarvestReplaceBlock");
+        string replacekName = HarvestBlock.GetBlock().Properties.GetString("HarvestReplaceBlock");
         if (string.IsNullOrEmpty(replacekName)) Log.Error("Missing HarvestReplaceBlock property");
 
-        if (Block.list[HarvestBlock.BlockID].itemsToDrop.TryGetValue(EnumDropEvent.Harvest,
+        if (HarvestBlock.GetBlock().itemsToDrop.TryGetValue(EnumDropEvent.Harvest,
             out List<Block.SItemDropProb> sitemDropProbList))
         {
             if (sitemDropProbList == null)
@@ -380,7 +380,7 @@ public class PlantHarvester : WorldNode, ITickable
         if (HarvestProgress >= 1f)
         {
             // Safety check if materials have changed
-            if (!CanHarvestBlock(Block.list[HarvestBlock.BlockID]))
+            if (!CanHarvestBlock(HarvestBlock.GetBlock()))
             {
 //                Log.Out("Can't harvest {0}", Block.list[HarvestBlockType].GetBlockName());
                 // Inventory seems to have changed (not repair possible)

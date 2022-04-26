@@ -20,11 +20,6 @@ public class PipeGridWell : WorldNode
     //     GlobalTicker.Instance.Schedule(tick, this);
     // }
 
-    protected override void Init()
-    {
-        // ScheduleNextTick();
-    }
-
     public PipeGridWell(Vector3i position, BlockValue block)
         : base(position, block)
     { }
@@ -126,7 +121,7 @@ public class PipeGridWell : WorldNode
         }
         if (SunLight == 15)
         {
-            FillWater(0.01f);
+            FillWater(0.0003f * delta);
         }
     }
 

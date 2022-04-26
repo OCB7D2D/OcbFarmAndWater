@@ -264,13 +264,11 @@ public class PipeGridManager : PersistedData<PipeGridManager>
             Connections[connection.WorldPos] = connection;
             var grid = connection.Grid = new PipeGrid();
             grid.AddConnection(connection);
-            Console.WriteLine("Created a new grid");
         }
         else
         {
             Connections[connection.WorldPos] = connection;
             connection.PropagateGridChange(connection[source]);
-            Console.WriteLine("Propagate finished");
         }
 
     }
@@ -442,7 +440,7 @@ public class PipeGridManager : PersistedData<PipeGridManager>
                 // Disallow if only one has a connector
                 else if (a || b) return false;
                 // Check if we would exhaust allowed connections
-                if (a && neighbour.Block(out IBlockPipeNode node))
+                if (a && neighbour.GetBlock(out IBlockPipeNode node))
                     if (neighbour.Count >= node.MaxConnections) return false;
             }
         }

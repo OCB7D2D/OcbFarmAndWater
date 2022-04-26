@@ -17,8 +17,9 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
     public int FertilityLevel;
     public float GrowProgress;
 
-    public float GrowthFactor = 1f;
+    public float GrowthFactor = 0.01f;
 
+    public float HasWater = 0.0f;
     public bool NeedsWater => true;
     public Vector2i SearchArea = new Vector2i(2, 2);
     public Vector2i SearchHeigh = new Vector2i(-2, 2);
@@ -72,10 +73,10 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
     static readonly FieldInfo FieldNextPlant = AccessTools
         .Field(typeof(BlockPlantGrowing), "nextPlant");
 
-    public void RegisterScheduled(ulong ticks = 30u)
+    public void RegisterScheduled(ulong ticks = 60u)
     {
         if (Scheduled != null) PlantManager.DeleteScheduledTick(Scheduled);
-        Scheduled = PlantManager.AddScheduleTick(GetIsLoaded() ? ticks : 90u, this);
+        Scheduled = PlantManager.AddScheduleTick(GetIsLoaded() ? ticks : 600u, this);
     }
 
     public int GetLightLevel(WorldBase world)
@@ -104,7 +105,6 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
     public override void Tick(WorldBase world, ulong delta)
     {
         Scheduled = null;
-        GrowthFactor = 1f; // Base value
         var light = GetLightLevel(world);
         var fertility = GetFertilityLevel(world);
         // Check if plant needs water to grow
@@ -112,30 +112,34 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
         if (NeedsWater)
         {
             // 3% without water
-            GrowthFactor = 0.03f;
+            // GrowthFactor = 0.03f;
+            HasWater = 0.0f;
+            int consumedWater = 0;
             // See if we can consume any water
             foreach (PipeGridWell well in Wells)
             {
-                if (well.ConsumeWater(0.01f))
-                {
-                    if (GrowthFactor > 1f)
-                    {
-                        GrowthFactor *= 1.3f;
-                    }
-                    else
-                    {
-                        GrowthFactor = 1f;
-                    }
-                }
+                if (well.ConsumeWater(0.01f * delta / 100f))
+                    consumedWater++;
             }
-            // Deny more than double
-            if (GrowthFactor > 2f)
-                GrowthFactor = 2f;
+
+            float Grow = consumedWater > 0 ?
+                Mathf.Pow(delta / 1000f, 1.25f) :
+                -Mathf.Pow(delta / 1000f, 1.75f);
+
+            Log.Out("Grow {0}", Grow);
+
+            GrowthFactor += Grow;
+            if (GrowthFactor > 2f) GrowthFactor = 2f;
+            else if (GrowthFactor < 0f) GrowthFactor = 0.03f;
+        }
+        else
+        {
+            GrowthFactor = 1f; // Base value
         }
 
-        GrowProgress += light / 1024f / 8f * delta * GrowthFactor;
+        GrowProgress += light / 1024f / 8f * delta * GrowthFactor * 1;
         Log.Out("Ticked {0} (loaded: {1}, progress: {2:0}%, light: {3})",
-            Block.list[BlockID].GetBlockName(),
+            GetBlock().GetBlockName(),
             GetIsLoaded(), GrowProgress * 100f, light);
         if (GrowProgress < 1f) RegisterScheduled();
         else GrowToNext(world, PlantManager.Instance);
@@ -166,7 +170,7 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
 
         // This should hold true for every plant added to the manager!
         if (current == BlockValue.Air.type) Log.Error("Managed Plant is Air?");
-        BlockPlantGrowing grown = Block.list[BlockID] as BlockPlantGrowing;
+        GetBlock(out BlockPlantGrowing grown);
         if (grown == null) throw new Exception("Invalid Block for growing plant!");
         // Get the replacement via protected/dynamic method call
         BlockValue next = (BlockValue)FieldNextPlant.GetValue(grown);

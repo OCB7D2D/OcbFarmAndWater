@@ -302,6 +302,7 @@ public class OcbAutoHarvest : IModApi
 						__result += string.Format("\nLight Level: {0:0}%", plant.LightValue / 0.15f);
 						__result += string.Format("\nProgress: {0:0}%", plant.GrowProgress * 100f);
 						__result += string.Format("\nGrowthFactor: {0:0}%", plant.GrowthFactor * 100f);
+						__result += string.Format("\nHasWater: {0:0.##}", plant.HasWater);
 						__result += string.Format("\nAt {0}", plant.WorldPos);
 					}
 				}

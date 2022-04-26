@@ -10,6 +10,13 @@ public abstract class WorldNode : ITickable
 
     public virtual void TickUpdate() { }
 
+    // Return block of given type (may return null)
+    public bool GetBlock<T>(out T var) where T : class
+        => (var = Block.list[BlockID] as T) != null;
+
+    // Base method to get base block instance
+    public Block GetBlock() => Block.list[BlockID];
+
     protected virtual void Init()
     {
         if (!HasInterval(out ulong interval)) return;

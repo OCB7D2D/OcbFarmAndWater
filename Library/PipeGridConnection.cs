@@ -14,8 +14,8 @@ public class PipeGridConnection : WorldNode
     public int DistanceToSource = int.MaxValue;
 
     // Return block of given type (may return null)
-    public bool Block<T>(out T var) where T : class =>
-        (var = global::Block.list[BlockID] as T) != null;
+    // public override bool Block<T>(out T var) where T : class =>
+    //     (var = global::Block.list[BlockID] as T) != null;
 
     // Use public API below to keep Count in sync
     private PipeGridConnection[] Neighbours
@@ -71,7 +71,7 @@ public class PipeGridConnection : WorldNode
 
     public bool CanConnect(int side)
     {
-        if (Block(out IBlockPipeNode node))
+        if (GetBlock(out IBlockPipeNode node))
         {
             // Rotates question back into local frame
             return node.CanConnect(side, Rotation);

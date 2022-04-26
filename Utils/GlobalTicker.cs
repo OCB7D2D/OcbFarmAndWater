@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 // Sorted ticks to dispatch work in chunks
 // You need to drive it from time to time
@@ -14,8 +15,11 @@ public class GlobalTicker : SingletonInstance<GlobalTicker>
 
     public ScheduledTick Schedule(ulong ticks, ITickable tickable)
     {
+        // Randomize tick a little bit
+        ticks += (ulong)Random.Range(-3, 12);
         Log.Out("+++++ Scheduled in {0}", ticks);
-        ScheduledTick scheduled = new ScheduledTick(ticks, tickable, this);
+        ScheduledTick scheduled = new ScheduledTick(ticks, tickable);
+        // Scheduled.Remove(scheduled);
         Scheduled.Add(scheduled);
         // Log.Out("Scheduled in {2} (left growing: {0}, ticks: {1})",
         //     Instance.Growing.Count, Instance.ScheduledTicks.Count, ticks);

@@ -73,7 +73,7 @@
     <Compile Include="Harmony\OcbAutoHarvest.cs" />
     <Compile Include="Harmony\AssemblyInfo.cs" />
     <Compile Include="Library\AutoHarvestCmd.cs" />
-    <Compile Include="Library\GridPipeNode.cs" />
+    <Compile Include="Library\PipeGridNode.cs" />
     <Compile Include="Library\IBlockPipeNode.cs" />
     <Compile Include="Library\PipeGridManagerCmd.cs" />
     <Compile Include="Library\BlockAutoHarvest.cs" />
@@ -107,7 +107,7 @@
     <Compile Include="Library\PlantGrowing.cs" />
     <Compile Include="Utils\FullRotation.cs" />
     <Compile Include="Utils\ScheduledTick.cs" />
-    <Compile Include="Utils\ScheduledTicker.cs" />
+    <Compile Include="Utils\GlobalTicker.cs" />
     <Compile Include="Utils\SingletonInstance.cs" />
   </ItemGroup>
   <ItemGroup>

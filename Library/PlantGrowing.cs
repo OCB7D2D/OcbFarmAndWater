@@ -17,14 +17,32 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
     public int FertilityLevel;
     public float GrowProgress;
 
+    public float GrowthFactor = 1f;
+
+    public bool NeedsWater => true;
+    public Vector2i SearchArea = new Vector2i(2, 2);
+    public Vector2i SearchHeigh = new Vector2i(-2, 2);
+
     // List of sprinklers where we get water
     public List<Vector3i> Sprinklers
         = new List<Vector3i>();
 
     // List of wells from where we get water
-    public List<Vector3i> Wells
-        = new List<Vector3i>();
+    public List<PipeGridWell> Wells
+        = new List<PipeGridWell>();
 
+    public bool AddWell(PipeGridWell well)
+    {
+        int idx = Wells.IndexOf(well);
+        if (idx != -1) return false;
+        Wells.Add(well);
+        return true;
+    }
+
+    public bool RemoveWell(PipeGridWell well)
+    {
+        return Wells.Remove(well);
+    }
 
     // How does a plant know where it can get water from?
     // 1) When it is added, scan the perimeter completely
@@ -36,8 +54,6 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
     {
         return BlockHelper.IsLoaded(WorldPos);
     }
-
-    public Vector3i ToWorldPos() => WorldPos;
 
     public ScheduledTick Scheduled = null;
 
@@ -85,12 +101,39 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
         GetFertilityLevel(world);
     }
 
-    public void Tick(WorldBase world, ulong delta)
+    public override void Tick(WorldBase world, ulong delta)
     {
         Scheduled = null;
+        GrowthFactor = 1f; // Base value
         var light = GetLightLevel(world);
         var fertility = GetFertilityLevel(world);
-        GrowProgress += light / 1024f / 8f * delta;
+        // Check if plant needs water to grow
+        // Should be the only water grid API use
+        if (NeedsWater)
+        {
+            // 3% without water
+            GrowthFactor = 0.03f;
+            // See if we can consume any water
+            foreach (PipeGridWell well in Wells)
+            {
+                if (well.ConsumeWater(0.01f))
+                {
+                    if (GrowthFactor > 1f)
+                    {
+                        GrowthFactor *= 1.3f;
+                    }
+                    else
+                    {
+                        GrowthFactor = 1f;
+                    }
+                }
+            }
+            // Deny more than double
+            if (GrowthFactor > 2f)
+                GrowthFactor = 2f;
+        }
+
+        GrowProgress += light / 1024f / 8f * delta * GrowthFactor;
         Log.Out("Ticked {0} (loaded: {1}, progress: {2:0}%, light: {3})",
             Block.list[BlockID].GetBlockName(),
             GetIsLoaded(), GrowProgress * 100f, light);
@@ -98,17 +141,14 @@ public class PlantGrowing : WorldNode, ITickable, IGrowParameters
         else GrowToNext(world, PlantManager.Instance);
     }
 
-    public void OnLoaded(WorldBase world, Vector3i position, BlockValue block)
+    public void OnLoaded(WorldBase world, Vector3i position, BlockValue block, bool added = false)
     {
-        if (BlockID != block.type)
-        {
-            // Log.Warning("Loaded Managed Plant has changed from {0} to {1}",
-            //     Block.list[BlockId].GetBlockName(), block.Block.GetBlockName());
-            // BlockId = block.type;
-        }
-        // IsLoaded = true;
-        // Can't call tick directly
-        // Would alter an enumerator
+        // Do not search on load only?
+        if (added == false) return;
+        // Add more wells to our collection
+        PipeGridManager.Find(position,
+            SearchArea, SearchHeigh, 
+            ref Wells);
     }
 
 

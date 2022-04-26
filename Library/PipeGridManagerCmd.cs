@@ -70,7 +70,7 @@ public class WaterManagerCmd : ConsoleCmdAbstract
     public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
     {
 
-        Log.Out("Water Manager:");
+        Log.Out("Water Manager at {0}:", GameTimer.Instance.ticks);
         // foreach (var i in PipeGridManager.Instance.Connections)
         // {
         //     Log.Out("  Connection {0}", i);

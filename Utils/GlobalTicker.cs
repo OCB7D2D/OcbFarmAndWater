@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-public class ScheduledTicker
+// Sorted ticks to dispatch work in chunks
+// You need to drive it from time to time
+// Will make sure to not over utilize CPU
+public class GlobalTicker : SingletonInstance<GlobalTicker>
 {
 
     // A set of ticks pre-sorted to dispatch in batches for less CPU strain
@@ -11,7 +14,8 @@ public class ScheduledTicker
 
     public ScheduledTick Schedule(ulong ticks, ITickable tickable)
     {
-        ScheduledTick scheduled = new ScheduledTick(ticks, tickable);
+        Log.Out("+++++ Scheduled in {0}", ticks);
+        ScheduledTick scheduled = new ScheduledTick(ticks, tickable, this);
         Scheduled.Add(scheduled);
         // Log.Out("Scheduled in {2} (left growing: {0}, ticks: {1})",
         //     Instance.Growing.Count, Instance.ScheduledTicks.Count, ticks);
@@ -23,7 +27,7 @@ public class ScheduledTicker
         return Scheduled.Remove(scheduled);
     }
 
-    public void TickScheduled(WorldBase world)
+    public void OnTick(WorldBase world)
     {
         int done = 0;
         var tick = GameTimer.Instance.ticks;
@@ -37,6 +41,8 @@ public class ScheduledTicker
             Scheduled.Remove(scheduled);
             ulong delta = tick - scheduled.TickStart;
             scheduled.Object.Tick(world, delta);
+            if (scheduled.Object.HasInterval(out ulong iv))
+                Schedule(iv, scheduled.Object);
             done += 1;
         }
     }

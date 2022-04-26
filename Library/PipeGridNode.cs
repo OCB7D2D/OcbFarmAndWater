@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-class GridPipeNode : WorldNode
+class PipeGridNode : WorldNode
 {
-    public GridPipeNode(Vector3i position, BlockValue block)
+    public PipeGridNode(Vector3i position, BlockValue block)
         : base(position, block) { }
 
     public BlockPipeConnection Block => global::Block

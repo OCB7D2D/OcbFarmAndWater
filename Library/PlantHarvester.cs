@@ -51,8 +51,6 @@ public class PlantHarvester : WorldNode, ITickable
         return BlockHelper.IsLoaded(WorldPos);
     }
 
-    public Vector3i ToWorldPos() => WorldPos;
-
     public void RegisterScheduled(ulong ticks = 30u)
     {
         if (Scheduled != null) PlantManager.DeleteScheduledTick(Scheduled);
@@ -407,7 +405,7 @@ public class PlantHarvester : WorldNode, ITickable
         return false;
     }
 
-    public void Tick(WorldBase world, ulong delta)
+    public override void Tick(WorldBase world, ulong delta)
     {
         ulong tick = 30u;
         Scheduled = null;

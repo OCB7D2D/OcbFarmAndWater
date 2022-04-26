@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -14,6 +13,17 @@ public class PipeGridWell : WorldNode
     // Add pumps from different grids (sources)?
     HashSet<PipeGridOutput> Outputs =
         new HashSet<PipeGridOutput>();
+
+    // private void ScheduleNextTick(ulong ticks = 30)
+    // {
+    //     var tick = GameTimer.Instance.ticks + ticks;
+    //     GlobalTicker.Instance.Schedule(tick, this);
+    // }
+
+    protected override void Init()
+    {
+        // ScheduleNextTick();
+    }
 
     public PipeGridWell(Vector3i position, BlockValue block)
         : base(position, block)
@@ -74,6 +84,13 @@ public class PipeGridWell : WorldNode
         }
     }
 
+    public bool ConsumeWater(float amount)
+    {
+        if (WaterAvailable < amount) return false;
+        WaterAvailable -= amount;
+        return true;
+    }
+
     public void FillWater(float amount)
     {
         if (amount <= 0) return;
@@ -91,17 +108,21 @@ public class PipeGridWell : WorldNode
         }
     }
 
-    public void TickUpdate()
+    public override bool HasInterval(out ulong interval)
     {
+        interval = 25 + (ulong)Random.Range(0, 20); ;
+        return true;
+    }
+
+    public override void Tick(WorldBase world, ulong delta)
+    {
+        Log.Out("Ticked the well");
         if (WaterAvailable >= MaxWaterLevel) return;
-        if (GameManager.Instance.World is WorldBase world)
+        if (world.GetChunkFromWorldPos(WorldPos) is Chunk chunk)
         {
-            if (world.GetChunkFromWorldPos(WorldPos) is Chunk chunk)
-            {
-                SunLight = chunk.GetLight(
-                    WorldPos.x, WorldPos.y, WorldPos.z,
-                    Chunk.LIGHT_TYPE.SUN);
-            }
+            SunLight = chunk.GetLight(
+                WorldPos.x, WorldPos.y, WorldPos.z,
+                Chunk.LIGHT_TYPE.SUN);
         }
         if (SunLight == 15)
         {

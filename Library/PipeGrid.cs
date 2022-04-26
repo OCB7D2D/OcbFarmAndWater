@@ -24,24 +24,6 @@ public class PipeGrid
 
     public bool IsCyclic = false;
 
-    public PipeGrid()
-    {
-    }
-
-    public void TickUpdate()
-    {
-        if (Source != null)
-            Source.TickUpdate();
-        foreach (var pump in Pumps)
-            pump.TickUpdate();
-        //foreach (var output in Wells)
-        //    output.TickUpdate();
-        foreach (var output in Outputs)
-            output.TickUpdate();
-        foreach (var sprinkler in Sprinklers)
-            sprinkler.TickUpdate();
-    }
-
     public void AddConnection(PipeGridConnection connection)
     {
         Count++;

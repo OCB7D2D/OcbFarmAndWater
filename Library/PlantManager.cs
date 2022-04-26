@@ -22,11 +22,6 @@ public class PlantManager : PersistedData<PlantManager>
     // Tick rate to harvest crops (partially)
     // private float HarvestTickRate = 1.8f;
 
-    // Sorted ticks to dispatch work in chunks
-    // You need to drive it from time to time
-    // Will make sure to not over utilize CPU
-    public ScheduledTicker Ticker = new ScheduledTicker();
-
     // Dictionary of all growing plants in the world (either loaded or unloaded chunks)
     public Dictionary<Vector3i, PlantGrowing> Growing = new Dictionary<Vector3i, PlantGrowing>();
 
@@ -61,12 +56,12 @@ public class PlantManager : PersistedData<PlantManager>
 
     public static ScheduledTick AddScheduleTick(ulong ticks, ITickable tickable)
     {
-        return Instance.Ticker.Schedule(ticks, tickable);
+        return GlobalTicker.Instance.Schedule(ticks, tickable);
     }
 
     public static void DeleteScheduledTick(ScheduledTick scheduled)
     {
-        Instance.Ticker.Unschedule(scheduled);
+        GlobalTicker.Instance.Unschedule(scheduled);
     }
 
     public static bool TryGetGrowing(Vector3i position, out PlantGrowing plant)
@@ -164,7 +159,7 @@ public class PlantManager : PersistedData<PlantManager>
         {
             plant = new PlantGrowing(position, 0, block);
             instance.Growing[position] = plant;
-            plant.OnLoaded(world, position, block);
+            plant.OnLoaded(world, position, block, true);
             plant.RegisterScheduled(0);
         }
     }
@@ -220,7 +215,7 @@ public class PlantManager : PersistedData<PlantManager>
         if (instance.TickWaitTime >= ScheduledTickRate)
         {
             instance.TickWaitTime %= ScheduledTickRate;
-            TickScheduled(GameManager.Instance.World);
+            TickScheduled(world);
         }
         // instance.HarvestWaitTime += deltaTime;
         // if (instance.HarvestWaitTime >= HarvestTickRate)
@@ -330,16 +325,16 @@ public class PlantManager : PersistedData<PlantManager>
     public void TickScheduled(WorldBase world)
     {
         GrowNow.Clear();
-        Ticker.TickScheduled(world);
+        GlobalTicker.Instance.OnTick(world);
     }
 
     public void RemoveGrowing(Vector3i position)
     {
         if (Growing.TryGetValue(position, out PlantGrowing plant))
-            Ticker.Unschedule(plant.Scheduled);
+            GlobalTicker.Instance.Unschedule(plant.Scheduled);
         Growing.Remove(position); // Remove the plant
         Log.Out("Unscheduled (left growing: {0}, ticks: {1})",
-            Growing.Count, Ticker.Count);
+            Growing.Count, GlobalTicker.Instance.Count);
     }
 
     public void AddHarvestable(Vector3i position, PlantHarvestable type)

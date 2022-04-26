@@ -19,9 +19,4 @@ public class PipeGridSprinkler : PipeGridConnection
         base.Write(bw);
     }
 
-    public void TickUpdate()
-    {
-
-    }
-
 }

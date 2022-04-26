@@ -1,5 +1,5 @@
 ﻿// Tired of writing this over and over again ;)
-public abstract class SingletonInstance<T> where T : new()
+public class SingletonInstance<T> : object where T : new()
 {
     protected static T instance;
     public static T Instance

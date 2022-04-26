@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using UnityEngine;
 
 public class PipeGridSource : PipeGridPowered
 {
@@ -24,19 +25,22 @@ public class PipeGridSource : PipeGridPowered
         base.Write(bw);
     }
 
-    public void TickUpdate()
+    public override bool HasInterval(out ulong interval)
     {
-        if (GameManager.Instance.World is WorldBase world)
-        {
-            var block = world.GetBlock(WorldPos + Vector3i.up);
-            if (block.isWater)
-            {
-                // block.damage += 1;
-                // world.SetBlockRPC(WorldPos + Vector3i.up, block);
-                // Log.Out("Water {0}", block.damage);
-            }
-        }
+        interval = 110 + (ulong)Random.Range(0, 20);
+        return true;
+    }
 
+    public override void Tick(WorldBase world, ulong delta)
+    {
+        Log.Out("Tick Source");
+        var block = world.GetBlock(WorldPos + Vector3i.up);
+        if (block.isWater)
+        {
+            // block.damage += 1;
+            // world.SetBlockRPC(WorldPos + Vector3i.up, block);
+            // Log.Out("Water {0}", block.damage);
+        }
     }
 
 }

@@ -69,17 +69,9 @@ public class PipeGridConnection : WorldNode
         return Count <= 1;
     }
 
-    public int GetNeighbourCount()
-    {
-        int count = 0;
-        foreach (var neighbour in Neighbours)
-            count += neighbour == null ? 0 : 1;
-        return count;
-    }
-
     public bool CanConnect(int side)
     {
-        if (Block<BlockPipeConnection>(out var node))
+        if (Block(out IBlockPipeNode node))
         {
             // Rotates question back into local frame
             return node.CanConnect(side, Rotation);
@@ -158,8 +150,6 @@ public class PipeGridConnection : WorldNode
 
     private static Queue<Walker> todo
         = new Queue<Walker>();
-
-    private static bool BreakDistance(PipeGridConnection connection) => connection.BreakDistance();
 
     public int CountLongestDistance()
     {

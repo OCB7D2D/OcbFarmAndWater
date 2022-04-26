@@ -63,7 +63,7 @@ class BoundHelperManager : SingletonInstance<BoundHelperManager>
         }
     }
 
-    private void CreateLocalHelper(Vector3i helper, Vector3 position, Vector3 scale, Color color)
+    private void CreateOrUpdateHelper(Vector3i helper, Vector3 position, Vector3 scale, Color color)
     {
         if (LandClaimBoundsHelper.GetBoundsHelper(helper.ToVector3()) is Transform transform)
         {
@@ -84,6 +84,7 @@ class BoundHelperManager : SingletonInstance<BoundHelperManager>
         // All the info is directly available
         else if (Helpers.TryGetValue(helper, out BoundHelper bh))
         {
+            Log.Out("Adjust helper now");
             // Create the network package once
             var package = bh.GetNetPackage(helper);
             bh.Update(position, scale, color);
@@ -99,10 +100,15 @@ class BoundHelperManager : SingletonInstance<BoundHelperManager>
         {
             Log.Error("Bound Helper to adjust was not found {0}", helper);
         }
+        if (!GameManager.IsDedicatedServer)
+        {
+            CreateOrUpdateHelper(helper, position, scale, color);
+        }
     }
 
     public void AddHelper(Vector3i helper, Vector3 position, Vector3 scale, Color color)
     {
+        Log.Warning("AddHelper");
         // Pure client side implementation (no server part available)
         if (!SingletonMonoBehaviour<ConnectionManager>.Instance.IsServer)
         {
@@ -137,8 +143,7 @@ class BoundHelperManager : SingletonInstance<BoundHelperManager>
         }
         if (!GameManager.IsDedicatedServer)
         {
-            Log.Out("Create the local helper now");
-            CreateLocalHelper(helper, position, scale, color);
+            CreateOrUpdateHelper(helper, position, scale, color);
         }
     }
 

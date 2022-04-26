@@ -47,7 +47,6 @@ public class BoundHelper
 
     public NetPackage GetNetPackage(Vector3i helper)
     {
-        Log.Out("Get Net Package {0} {1} {2} {3}", helper, position, scale, color);
         return NetPackageManager
             .GetPackage<NetPkgBoundHelperToClient>()
             .Setup(helper, position, scale, color);

@@ -1,13 +1,30 @@
 ﻿using System.IO;
+using UnityEngine;
 
-public abstract class WorldNode
+public abstract class WorldNode : ITickable
 {
 
     public int BlockID = 0; // Air
     public byte Rotation = 0;
     protected ulong LastWalker = 0;
 
+    public virtual void TickUpdate() { }
+
+    protected virtual void Init()
+    {
+        if (!HasInterval(out ulong interval)) return;
+        GlobalTicker.Instance.Schedule(interval, this);
+    }
+
+    public virtual bool HasInterval(out ulong interval)
+    {
+        interval = 0;
+        return false;
+    }
+
     public Vector3i WorldPos { get; private set; }
+
+    public Vector3i ToWorldPos() => WorldPos;
 
     // ToDo: Introduce BlockPipeNode as abstract base
     // public virtual Block Block => Block.list[BlockID];
@@ -17,6 +34,7 @@ public abstract class WorldNode
         BlockID = block.type;
         WorldPos = position;
         Rotation = block.rotation;
+        Init();
     }
 
     public WorldNode(BinaryReader br)
@@ -27,6 +45,7 @@ public abstract class WorldNode
             br.ReadInt32(),
             br.ReadInt32());
         Rotation = br.ReadByte();
+        Init();
     }
 
     public virtual void Write(BinaryWriter bw)
@@ -38,4 +57,8 @@ public abstract class WorldNode
         bw.Write(Rotation);
     }
 
+    public virtual void Tick(WorldBase world, ulong delta)
+    {
+        // if (!IsInterval()) return;
+    }
 }

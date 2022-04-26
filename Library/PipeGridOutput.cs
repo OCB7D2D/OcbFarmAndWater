@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-public class PipeGridOutput : PipeGridPowered
+public class PipeGridOutput : PipeGridPowered, ITickable
 {
 
     public PipeGridOutput(Vector3i position, BlockValue block)
@@ -21,6 +20,12 @@ public class PipeGridOutput : PipeGridPowered
         = new HashSet<PipeGridWell>();
 
     public bool IsWorking { get => IsPowered; }
+
+    public override bool HasInterval(out ulong interval)
+    {
+        interval = 10 + (ulong)Random.Range(0, 20); ;
+        return true;
+    }
 
     public PipeGridOutput(BinaryReader br)
          : base(br)
@@ -43,8 +48,7 @@ public class PipeGridOutput : PipeGridPowered
         return Wells.Remove(well);
     }
 
-
-    internal void TickUpdate()
+    public override void Tick(WorldBase world, ulong delta)
     {
         if (!IsWorking) return;
         foreach (var well in Wells)

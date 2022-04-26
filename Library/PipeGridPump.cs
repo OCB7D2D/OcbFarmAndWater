@@ -20,7 +20,7 @@ public class PipeGridPump : PipeGridPowered
     public override int GetStorageType() => 2;
 
 
-public PipeGridPump(BinaryReader br)
+    public PipeGridPump(BinaryReader br)
          : base(br)
     {
     }
@@ -31,8 +31,11 @@ public PipeGridPump(BinaryReader br)
         base.Write(bw);
     }
 
-    public void TickUpdate()
+    public override void Tick(WorldBase world, ulong delta)
     {
+        base.Tick(world, delta);
+        Log.Out("Ticked Pump?");
     }
+
 
 }

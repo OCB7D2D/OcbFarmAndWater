@@ -30,18 +30,11 @@ public class PipeGridManager : PersistedData<PipeGridManager>
         ModEvents.GameUpdate.RegisterHandler(Update);
     }
 
-    ulong nextTick = ulong.MinValue;
-
     private void Update()
     {
-        if (nextTick > GameTimer.Instance.ticks) return;
-        nextTick = GameTimer.Instance.ticks + 30;
         if (GameManager.Instance.World is WorldBase world)
         {
-            foreach (var grid in Grids)
-                grid.TickUpdate();
-            foreach (var well in Wells)
-                well.Value.TickUpdate();
+            GlobalTicker.Instance.OnTick(world);
         }
     }
 
@@ -50,10 +43,10 @@ public class PipeGridManager : PersistedData<PipeGridManager>
 
     public int GridCount { get => Grids.Count; }
 
-    public static List<T> Find<T>(Vector3i position, Vector2i area, Vector2i height) where T : WorldNode
+    public static bool Find<T>(Vector3i position, Vector2i area, Vector2i height, ref List<T> list) where T : class
     {
-        List<T> list = new List<T>();
-        if (instance == null) return list;
+        if (instance == null) return false;
+        int previous = list.Count;
         int startX = -area.x + position.x;
         int stopX = area.x + position.x;
         int startY = height.x + position.y;
@@ -74,6 +67,13 @@ public class PipeGridManager : PersistedData<PipeGridManager>
                 }
             }
         }
+        return previous < list.Count;
+    }
+
+    public static List<T> Find<T>(Vector3i position, Vector2i area, Vector2i height) where T : class
+    {
+        List<T> list = new List<T>();
+        Find(position, area, height, ref list);
         return list;
     }
 
@@ -115,24 +115,27 @@ public class PipeGridManager : PersistedData<PipeGridManager>
 
     public void AddWell(PipeGridWell well)
     {
+        // Search for output to fill up the well
         foreach (var output in Find<PipeGridOutput>(
             well.WorldPos, OutputArea, OutputHeight))
         {
+            // Add cross-references
             output.AddWell(well);
             well.AddOutput(output);
         }
-        // foreach (var output in Find<PlantGrowing>(
-        //     well.WorldPos, OutputArea, OutputHeight))
-        // {
-        //     output.AddWell(well);
-        //     well.AddOutput(output);
-        // }
+        // Search for plants that could use us
+        foreach (var plant in Find<PlantGrowing>(
+            well.WorldPos, OutputArea, OutputHeight))
+        {
+            // Add reference
+            plant.AddWell(well);
+        }
+        // Register in our dictionary
         Wells[well.WorldPos] = well;
     }
 
     public void RemoveWell(Vector3i position)
     {
-        Log.Out("Rmove well");
         if (Wells.TryGetValue(position,
             out PipeGridWell well))
         {
@@ -141,6 +144,13 @@ public class PipeGridManager : PersistedData<PipeGridManager>
             {
                 output.RemoveWell(well);
                 well.RemoveOutput(output);
+            }
+            // Search for plants that could use us
+            foreach (var plant in Find<PlantGrowing>(
+                well.WorldPos, OutputArea, OutputHeight))
+            {
+                // Add reference
+                plant.RemoveWell(well);
             }
             Wells.Remove(position);
         }
@@ -334,7 +344,7 @@ public class PipeGridManager : PersistedData<PipeGridManager>
     }
 
 
-    public bool TryGetNode<T>(Vector3i position, out T node) where T : WorldNode
+    public bool TryGetNode<T>(Vector3i position, out T node) where T : class
     {
         if (typeof(PipeGridConnection).IsAssignableFrom(typeof(T)))
         {
@@ -350,6 +360,16 @@ public class PipeGridManager : PersistedData<PipeGridManager>
             if (TryGetNode(position, out PipeGridWell well))
             {
                 node = well as T;
+                if (node != null)
+                    return true;
+            }
+        }
+        else if (typeof(PlantGrowing).IsAssignableFrom(typeof(T)))
+        {
+            if (PlantManager.Instance.Growing.TryGetValue(
+                position, out PlantGrowing growing))
+            {
+                node = growing as T;
                 if (node != null)
                     return true;
             }
